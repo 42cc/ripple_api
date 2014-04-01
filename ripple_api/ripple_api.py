@@ -25,12 +25,12 @@ class RippleApiError(Exception):
         return '%s. %s' % (self.error, self.message)
 
 
-def call_api(data, user=None, pwd=None):
-    if user is None:
-        user = settings.RIPPLE_API_USER
-    if pwd is None:
-        pwd = settings.RIPPLE_API_PASSWORD
-    auth = (user, pwd) if user or pwd else None
+def call_api(data, api_user=None, api_password=None):
+    if api_user is None:
+        api_user = settings.RIPPLE_API_USER
+    if api_password is None:
+        api_password = settings.RIPPLE_API_PASSWORD
+    auth = (api_user, api_password) if api_user or api_password else None
     response = requests.post(settings.RIPPLE_API_URL, json.dumps(data), auth=auth, verify=False)
 
     try:
