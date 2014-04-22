@@ -26,20 +26,35 @@ class RippleApiError(Exception):
 
 
 def call_api(data):
-    user = settings.RIPPLE_API_USER
-    pwd = settings.RIPPLE_API_PASSWORD
-    auth = (user, pwd) if user or pwd else None
-    response = requests.post(settings.RIPPLE_API_URL, json.dumps(data), auth=auth, verify=False)
+    error = None
+    for server in settings.RIPPLE_API_DATA:
+        url = server.get('RIPPLE_API_URL', '')
+        user = server.get('RIPPLE_API_USER', '')
+        pwd = server.get('RIPPLE_API_PASSWORD', '')
+        auth = (user, pwd) if user or pwd else None
+        try:
+            response = requests.post(
+                url, json.dumps(data), auth=auth, verify=False)
+        except requests.ConnectionError, e:
+            error = e
+            continue
 
-    try:
-        result = response.json()['result']
-    except ValueError:
-        raise RippleApiError('Error', '', response.text)
+        try:
+            result = response.json()['result']
+        except ValueError:
+            error = RippleApiError('Error', '', response.text)
+            continue
 
-    if not 'error' in result:
-        return result
-    else:
-        raise RippleApiError(result['error'], result['error_code'], result['error_message'])
+        if not 'error' in result:
+            return result
+        else:
+            error = RippleApiError(
+                result['error'],
+                result['error_code'],
+                result['error_message']
+            )
+            continue
+    raise error
 
 
 def account_tx(account, ledger_index_min=-1, ledger_index_max=-1, binary=False, forward=False, limit=None, marker=None):
