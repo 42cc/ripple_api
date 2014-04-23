@@ -25,12 +25,29 @@ class RippleApiError(Exception):
         return '%s. %s' % (self.error, self.message)
 
 
-def call_api(data):
+def call_api(data, server_url=None, api_user=None, api_password=None):
     error = None
-    for server in settings.RIPPLE_API_DATA:
-        url = server.get('RIPPLE_API_URL', '')
-        user = server.get('RIPPLE_API_USER', '')
-        pwd = server.get('RIPPLE_API_PASSWORD', '')
+    if server_url and not (api_user or api_password):
+        servers = filter(
+            lambda item: item.get('RIPPLE_API_URL', '') == server_url,
+            settings.RIPPLE_API_DATA
+        )
+        servers = servers or [{'RIPPLE_API_URL': server_url}]
+    elif server_url and (api_user or api_password):
+        servers = [
+            {
+                'RIPPLE_API_URL': server_url,
+                'RIPPLE_API_USER': api_user,
+                'RIPPLE_API_PASSWORD': api_password,
+            }
+        ]
+    else:
+        servers = settings.RIPPLE_API_DATA
+
+    for server_config in servers:
+        url = server_config.get('RIPPLE_API_URL', '')
+        user = server_config.get('RIPPLE_API_USER', '')
+        pwd = server_config.get('RIPPLE_API_PASSWORD', '')
         auth = (user, pwd) if user or pwd else None
         try:
             response = requests.post(
@@ -50,14 +67,17 @@ def call_api(data):
         else:
             error = RippleApiError(
                 result['error'],
-                result['error_code'],
-                result['error_message']
+                result.get('error_code', 'no_code'),
+                result.get('error_message', 'no_message'),
             )
             continue
     raise error
 
 
-def account_tx(account, ledger_index_min=-1, ledger_index_max=-1, binary=False, forward=False, limit=None, marker=None):
+def account_tx(
+        account, ledger_index_min=-1, ledger_index_max=-1, binary=False,
+        forward=False, limit=None, marker=None,
+        server_url=None, api_user=None, api_password=None):
     """
     Fetch a list of transactions that applied to this account.
 
@@ -93,10 +113,10 @@ def account_tx(account, ledger_index_min=-1, ledger_index_max=-1, binary=False, 
     if marker:
         data['params'][0]['marker'] = marker
 
-    return call_api(data)
+    return call_api(data, server_url, api_user, api_password)
 
 
-def tx(transaction_id):
+def tx(transaction_id, server_url=None, api_user=None, api_password=None):
     """
     Return information about a transaction.
 
@@ -108,10 +128,13 @@ def tx(transaction_id):
     data = {"method": "tx",
             "params": [{'transaction': transaction_id}]}
 
-    return call_api(data)
+    return call_api(data, server_url, api_user, api_password)
 
 
-def sign(account, secret, destination, amount, send_max=None, paths=None, flags=None, destination_tag=None, transaction_type='Payment'):
+def sign(
+        account, secret, destination, amount, send_max=None, paths=None,
+        flags=None, destination_tag=None, transaction_type='Payment',
+        server_url=None, api_user=None, api_password=None):
     """
     After you've created a transaction it must be cryptographically signed using the secret belonging to the owner of
     the sending address. Signing a transaction prior to submission allows you to maintain closer control over
@@ -168,10 +191,10 @@ def sign(account, secret, destination, amount, send_max=None, paths=None, flags=
     if destination_tag:
         data['params'][0]['tx_json']['DestinationTag'] = destination_tag
 
-    return call_api(data)
+    return call_api(data, server_url, api_user, api_password)
 
 
-def submit(tx_blob):
+def submit(tx_blob, server_url=None, api_user=None, api_password=None):
     """
     Submits a transaction to the network.
 
@@ -186,4 +209,4 @@ def submit(tx_blob):
         "params": [{
             "tx_blob": tx_blob}]}
 
-    return call_api(data)
+    return call_api(data, server_url, api_user, api_password)
