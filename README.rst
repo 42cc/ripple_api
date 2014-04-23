@@ -7,9 +7,20 @@ Settings
 
 * ``RIPPLE_ACCOUNT`` — account that acts as 'manager' and monitors incoming transactions
 * ``RIPPLE_SECRET`` — secret for 'manager' account
-* ``RIPPLE_API_URL``
-* ``RIPPLE_API_USER``
-* ``RIPPLE_API_PASSWORD``
+* ``RIPPLE_API_DATA[0]['RIPPLE_API_URL']``
+* ``RIPPLE_API_DATA[0]['RIPPLE_API_USER']``
+* ``RIPPLE_API_DATA[0]['RIPPLE_API_PASSWORD']``
+
+Example Config::
+
+	RIPPLE_API_DATA = [
+		{
+            'RIPPLE_API_URL': 'http://s_west.ripple.com:51234',
+            'RIPPLE_API_USER': '',
+            'RIPPLE_API_PASSWORD': '',
+        }
+	]  # You can specify multiple servers and ripple_api app will try them in order if one of servers
+	#    returns error
 
 
 Signals
