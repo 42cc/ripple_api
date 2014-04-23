@@ -4,10 +4,13 @@ from django.conf import settings
 from django.db.models.signals import post_save
 
 from mock import patch
+from requests import ConnectionError, Response
+import json
 
 from .models import Transaction
 from .management.commands.process_transactions import Command
 from .signals import transaction_status_changed
+from ripple_api import call_api, RippleApiError
 
 
 class TestRipple(TestCase):
@@ -92,3 +95,64 @@ class TestRipple(TestCase):
         Command().submit_pending_transactions()
         transaction = Transaction.objects.get(hash='hash')
         self.assertEqual(transaction.status, Transaction.SUBMITTED)
+
+    @patch('requests.post')
+    def test_call_api(self, post_mock):
+        original_settings = settings.RIPPLE_API_DATA
+        settings.RIPPLE_API_DATA = [
+            {
+                'RIPPLE_API_URL': 'http://one.ripple.com:51234',
+                'RIPPLE_API_USER': '',
+                'RIPPLE_API_PASSWORD': '',
+            },
+            {
+                'RIPPLE_API_URL': 'http://two.ripple.com:51234',
+                'RIPPLE_API_USER': '',
+                'RIPPLE_API_PASSWORD': '',
+            },
+            {
+                'RIPPLE_API_URL': 'http://three.ripple.com:51234',
+                'RIPPLE_API_USER': '',
+                'RIPPLE_API_PASSWORD': '',
+            }
+        ]
+
+        def custom_call_api(error):
+            try:
+                call_api({})
+            except error:
+                self.assertEqual(post_mock.call_count,
+                                 len(settings.RIPPLE_API_DATA))
+
+        def side_effect(*args, **kwargs):
+            raise ConnectionError
+
+        post_mock.side_effect = side_effect
+
+        custom_call_api(ConnectionError)
+
+        def side_effect(*args, **kwargs):
+            response = Response()
+            response._content = '''{'\2': 'binary', 'result': 'failed'}'''
+            return response
+
+        post_mock.reset_mock()
+        post_mock.side_effect = side_effect
+
+        custom_call_api(RippleApiError)
+
+        def side_effect(*args, **kwargs):
+            response = Response()
+            response_data = {'result': {}}
+            response_data['result']['error'] = 'failed'
+            response_data['result']['error_code'] = 403
+            response_data['result']['error_message'] = 'You failed!'
+            response._content = json.dumps(response_data)
+            return response
+
+        post_mock.reset_mock()
+        post_mock.side_effect = side_effect
+
+        custom_call_api(RippleApiError)
+
+        settings.RIPPLE_API_DATA = original_settings
