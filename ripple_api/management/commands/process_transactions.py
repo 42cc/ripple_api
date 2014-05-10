@@ -108,7 +108,9 @@ class Command(NoArgsCommand):
                     transaction.save()
                 continue
 
-            if response.get('meta', {}).get('TransactionResult') == 'tesSUCCESS':
+            status = response.get('meta', {}).get('TransactionResult')
+
+            if status == 'tesSUCCESS':
                 transaction.status = Transaction.SUCCESS
                 transaction.save()
 
@@ -120,6 +122,8 @@ class Command(NoArgsCommand):
                     "Transaction: %s to %s was complete.", transaction, transaction.destination
                     )
                 )
+            else:
+                self.logger.info("Transaction status: %s" % status)
 
     def submit_pending_transactions(self):
         """
