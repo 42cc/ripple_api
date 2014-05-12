@@ -2,6 +2,7 @@
 
 from requests.exceptions import ConnectionError
 import logging
+import datetime
 
 #from ...conf import RIPPLE_ACCOUNT, RIPPLE_SECRET
 from django.conf import settings
@@ -45,6 +46,7 @@ class Command(NoArgsCommand):
         Get new transactions for settings.RIPPLE_ACCOUNT and store them in DB
 
         """
+        start_time = datetime.datetime.now()
         self.logger.info(self.format_log_message('Looking for new ripple transactions since last run'))
         ledger_min_index = get_min_ledger_index()
         marker = None
@@ -88,6 +90,13 @@ class Command(NoArgsCommand):
                             issuer=amount['issuer'], value=amount['value']
                         )
                         self.logger.info(self.format_log_message("Transaction saved: %s", transaction_object))
+            if (datetime.datetime.now() - start_time >= datetime.timedelta(seconds=270) and
+               has_results):
+                has_results = False
+                self.logger.error(
+                    'Process_transactions command terminated because (270 seconds) timeout: '
+                    + unicode(marker))
+
 
     def check_submitted_transactions(self):
         """
