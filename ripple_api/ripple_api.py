@@ -3,6 +3,7 @@
 # system imports:
 import json
 import logging
+from decimal import Decimal
 
 # thirdparty imports:
 import requests
@@ -100,6 +101,7 @@ def account_tx(
 
         `marker`:
             The point to resume from.
+
     """
     data = {"method": "account_tx",
             "params": [{
@@ -171,16 +173,16 @@ def sign(
     data = {
         "method": "sign",
         "params": [
-        {
-            "secret": secret,
-            "tx_json":
             {
-                "TransactionType": transaction_type,
-                "Account": account,
-                "Destination": destination,
-                "Amount": amount
-            }
-        }]}
+                "secret": secret,
+                "tx_json":
+                {
+                    "TransactionType": transaction_type,
+                    "Account": account,
+                    "Destination": destination,
+                    "Amount": amount
+                }
+            }]}
 
     if send_max:
         data['params'][0]['tx_json']['SendMax'] = send_max
@@ -210,3 +212,20 @@ def submit(tx_blob, server_url=None, api_user=None, api_password=None):
             "tx_blob": tx_blob}]}
 
     return call_api(data, server_url, api_user, api_password)
+
+
+def balance(
+        account, issuer, currency,
+        server_url=None, api_user=None, api_password=None):
+    results = call_api(
+        {
+            'method': 'account_lines',
+            'params': [{'account': account, 'peer': issuer}]
+        },
+        server_url=None, api_user=None, api_password=None
+    )
+    total = Decimal('0.0')
+    for line in results['lines']:
+        if line['account'] == issuer and line['currency'] == currency:
+            total += Decimal(line['balance'])
+    return total
