@@ -226,6 +226,6 @@ def balance(
     )
     total = Decimal('0.0')
     for line in results['lines']:
-        if line['account'] == issuer and line['currency'] == currency:
+        if line['currency'] == currency and (line['account'] == issuer or issuer is None):
             total += Decimal(line['balance'])
     return total
