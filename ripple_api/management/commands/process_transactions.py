@@ -54,7 +54,7 @@ class Command(NoArgsCommand):
         while has_results:
             try:
                 response = account_tx(settings.RIPPLE_ACCOUNT, ledger_min_index, limit=200, marker=marker)
-                self.logger.info(self.format_log_message(response))
+                # self.logger.info(self.format_log_message(response))
             except (RippleApiError, ConnectionError), e:
                 self.logger.error(self.format_log_message(e))
                 break
