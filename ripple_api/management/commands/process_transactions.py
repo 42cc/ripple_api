@@ -26,6 +26,7 @@ def get_min_ledger_index():
 class Command(NoArgsCommand):
     help = 'Command that processes transactions.'
     logger = logging.getLogger('ripple')
+    logger.setLevel(40)
 
     def format_log_message(self, message, transaction=None, *args):
         if transaction or args:
