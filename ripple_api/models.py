@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from model_utils import ModelTracker
 
-from signals import transaction_status_changed
+from signals import transaction_status_changed, transaction_failure_send
 
 
 class Transaction(models.Model):
@@ -62,3 +62,5 @@ class Transaction(models.Model):
 
         if created and self.status_tracker.previous('status') is not None:
             transaction_status_changed.send(sender=self.__class__, instance=self, old_status=self.status_tracker.previous('status'))
+        if self.status == self.FAILURE:
+            transaction_failure_send.send(sender=self.__class__, instance=self)
