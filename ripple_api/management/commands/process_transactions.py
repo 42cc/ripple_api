@@ -91,13 +91,10 @@ class Command(NoArgsCommand):
                             issuer=amount['issuer'], value=amount['value']
                         )
                         self.logger.info(self.format_log_message("Transaction saved: %s", transaction_object))
-            if (datetime.datetime.now() - start_time >= datetime.timedelta(seconds=270) and
-               has_results):
+            if (datetime.datetime.now() - start_time >= datetime.timedelta(seconds=270) and has_results):
                 has_results = False
                 self.logger.error(
-                    'Process_transactions command terminated because (270 seconds) timeout: '
-                    + unicode(marker))
-
+                    'Process_transactions command terminated because (270 seconds) timeout: ' + unicode(marker))
 
     def check_submitted_transactions(self):
         """
@@ -144,8 +141,8 @@ class Command(NoArgsCommand):
             self.logger.info(self.format_log_message('Submit: %s', transaction))
             submit_task.apply((transaction,))
 
-    def retry_failed_transactions(self):
-        self.logger.info('Retrying failed transactions')
-        for transaction in Transaction.objects.filter(status=Transaction.FAILURE):
-            self.logger.info(self.format_log_message('Found %s', transaction))
-            sign_task.apply((transaction, settings.RIPPLE_SECRET), link=submit_task.s())
+    #def retry_failed_transactions(self):
+    #    self.logger.info('Retrying failed transactions')
+    #    for transaction in Transaction.objects.filter(status=Transaction.FAILURE):
+    #        self.logger.info(self.format_log_message('Found %s', transaction))
+    #        sign_task.apply((transaction, settings.RIPPLE_SECRET), link=submit_task.s())
