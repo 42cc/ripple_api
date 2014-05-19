@@ -37,7 +37,7 @@ class Command(NoArgsCommand):
             return message
 
     def handle_noargs(self, **options):
-        self.retry_failed_transactions()
+        #self.retry_failed_transactions()
         self.monitor_transactions()
         self.submit_pending_transactions()
         self.check_submitted_transactions()
