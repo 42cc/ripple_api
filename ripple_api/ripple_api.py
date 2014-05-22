@@ -52,7 +52,7 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
         auth = (user, pwd) if user or pwd else None
         try:
             response = requests.post(
-                url, json.dumps(data), auth=auth, verify=False)
+                url, json.dumps(data), auth=auth, verify=False, timeout=5)
         except requests.ConnectionError, e:
             error = e
             continue
