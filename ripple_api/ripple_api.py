@@ -215,17 +215,17 @@ def submit(tx_blob, server_url=None, api_user=None, api_password=None):
 
 
 def balance(
-        account, issuer, currency,
+        account, issuers, currency,
         server_url=None, api_user=None, api_password=None):
     results = call_api(
         {
             'method': 'account_lines',
-            'params': [{'account': account, 'peer': issuer}]
+            'params': [{'account': account}]
         },
         server_url=None, api_user=None, api_password=None
     )
     total = Decimal('0.0')
     for line in results['lines']:
-        if line['currency'] == currency and (line['account'] == issuer or issuer is None):
+        if line['currency'] == currency and (line['account'] in issuers or issuers is None):
             total += Decimal(line['balance'])
     return total
