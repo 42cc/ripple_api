@@ -229,3 +229,43 @@ def balance(
         if line['currency'] == currency and (line['account'] in issuers or issuers is None):
             total += Decimal(line['balance'])
     return total
+
+
+def book_offer(taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='', \
+    ledger='current', marker='', autobridge=True, server_url=None, api_user=None, api_password=None):
+    """
+    Gets currency exchange rates
+
+    Params:
+        'taker_pays':
+            Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+        'taker_gets':
+            Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+        'ledger' (optional):
+            "current" (default). "closed", "validated", ledger_index, or ledger.
+        'taker' (optional):
+            The address of the taker. This affects the funding of offers by owners as they may need to pay transfer fees.
+            For a neutral point of view specify ADDRESS_ONE (rrrrrrrrrrrrrrrrrrrrBZbvji).
+        'marker' (optional):
+            Specify the paging marker as JSON. Defaults to "".
+            Token indicating start of page, it is returned from a previous invocation.
+        'autobridge' (optional):
+            If present, specifies synthesize orders through XRP books. Defaults to true
+    """
+    taker_pays = 'XRP' if taker_pays_curr == 'XRP' else {"currency": taker_pays_curr, "issuer": taker_pays_curr_issuer}
+    taker_gets = 'XRP' if taker_gets_curr == 'XRP' else {"currency": taker_gets_curr, "issuer": taker_gets_curr_issuer}
+    data = {
+        "method": "book_offers",
+        "params": [{
+            "taker_pays": taker_pays,
+            "taker_gets": taker_pays,
+            "ledger": ledger,
+            "marker": marker,
+            "autobridge": autobridge}]
+        }
+    if taker_address:
+        data["params"][0]["taker"] = taker_address
+
+    return call_api(data, server_url, api_user, api_password)
