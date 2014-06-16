@@ -229,3 +229,48 @@ def balance(
         if line['currency'] == currency and (line['account'] in issuers or issuers is None):
             total += Decimal(line['balance'])
     return total
+
+
+def is_trust_set(trusts, peer, currency='', limit=0):
+    """
+    checks if 'trusts' trusts 'peer' with specified currency and limit
+
+
+    Params:
+        `trusts`:
+            ripple address, that trusts or not 'peer'
+        `peer`:
+            ripple_address, that is trusted by  by 'trusts'
+        `currency` (optional):
+            currency in which trust should be set
+        `limit` (optional):
+            minimal amount of trust
+
+    Returns boolean
+
+    """
+    trust_result = False
+
+    trust_lines = call_api(
+        {
+            'method': 'account_lines',
+            'params': [{
+                'account': trusts,
+                'peer': peer
+            }]
+        },
+    )
+
+    status = trust_lines['status'] == 'success'
+    trusts = trust_lines['lines']
+    if status and trusts and not currency:
+        trust_result = True
+
+    elif status and trusts and currency:
+        for trust in trusts:
+
+            if currency == trust['currency']:
+                trust_result = float(limit) <= float(trust['limit'])
+                break
+
+    return trust_result
