@@ -274,3 +274,42 @@ def is_trust_set(trusts, peer, currency='', limit=0):
                 break
 
     return trust_result
+
+
+def book_offer(
+        taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='',
+        ledger='current', marker='', autobridge=True, server_url=None, api_user=None, api_password=None):
+    """
+    Gets currency exchange rates
+
+    Params:
+        'taker_pays':
+            Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+        'taker_gets':
+            Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+        'ledger' (optional):
+            "current" (default). "closed", "validated", ledger_index, or ledger.
+        'taker' (optional):
+            The address of the taker. This affects the funding of offers by owners as they may need to pay transfer fees.
+            For a neutral point of view specify ADDRESS_ONE (rrrrrrrrrrrrrrrrrrrrBZbvji).
+        'marker' (optional):
+            Specify the paging marker as JSON. Defaults to "".
+            Token indicating start of page, it is returned from a previous invocation.
+        'autobridge' (optional):
+            If present, specifies synthesize orders through XRP books. Defaults to true
+    """
+    data = {
+        "method": "book_offers",
+        "params": [{
+            "taker_pays": {"currency": taker_pays_curr, "issuer": taker_pays_curr_issuer},
+            "taker_gets": {"currency": taker_gets_curr, "issuer": taker_gets_curr_issuer},
+            "ledger": ledger,
+            "marker": marker,
+            "autobridge": autobridge}]
+        }
+    if taker_address:
+        data["params"][0]["taker"] = taker_address
+
+    return call_api(data, server_url, api_user, api_password)
