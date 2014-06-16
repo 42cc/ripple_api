@@ -300,11 +300,13 @@ def book_offer(
         'autobridge' (optional):
             If present, specifies synthesize orders through XRP books. Defaults to true
     """
+    taker_pays = 'XRP' if taker_pays_curr == 'XRP' else {"currency": taker_pays_curr, "issuer": taker_pays_curr_issuer}
+    taker_gets = 'XRP' if taker_gets_curr == 'XRP' else {"currency": taker_gets_curr, "issuer": taker_gets_curr_issuer}
     data = {
         "method": "book_offers",
         "params": [{
-            "taker_pays": {"currency": taker_pays_curr, "issuer": taker_pays_curr_issuer},
-            "taker_gets": {"currency": taker_gets_curr, "issuer": taker_gets_curr_issuer},
+            "taker_pays": taker_pays,
+            "taker_gets": taker_gets,
             "ledger": ledger,
             "marker": marker,
             "autobridge": autobridge}]
