@@ -3,6 +3,7 @@
 # system imports:
 import json
 import logging
+import socket
 from decimal import Decimal
 
 # thirdparty imports:
@@ -53,7 +54,9 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
         try:
             response = requests.post(
                 url, json.dumps(data), auth=auth, verify=False, timeout=5)
-        except requests.ConnectionError, e:
+        except TypeError:  # e.g. json encode error
+            raise
+        except Exception as e:
             error = e
             continue
 
