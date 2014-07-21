@@ -6,6 +6,7 @@ from django.db.models.signals import post_save
 from mock import patch
 from requests import ConnectionError, Response
 import json
+import ssl
 
 from .models import Transaction
 from .management.commands.process_transactions import Command
@@ -156,3 +157,10 @@ class TestRipple(TestCase):
         custom_call_api(RippleApiError)
 
         settings.RIPPLE_API_DATA = original_settings
+
+    @patch('requests.post')
+    def test_timeout(self, post_mock):
+        post_mock.side_effect = ssl.SSLError
+
+        with self.assertRaises(RippleApiError):
+            call_api({})
