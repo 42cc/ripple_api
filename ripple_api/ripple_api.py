@@ -59,7 +59,7 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
                 url, json.dumps(data), auth=auth, verify=False, timeout=5)
         except TypeError:  # e.g. json encode error
             raise
-        except (requests.exceptions.Timeout, ssl.SSLError) as e:
+        except (requests.exceptions.Timeout, ssl.SSLError, socket.timeout) as e:
             timeouts += 1
             continue
         except Exception as e:
