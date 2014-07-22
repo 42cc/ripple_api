@@ -5,6 +5,7 @@ import json
 import logging
 import socket
 from decimal import Decimal
+import ssl
 
 # thirdparty imports:
 import requests
@@ -46,6 +47,8 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
     else:
         servers = settings.RIPPLE_API_DATA
 
+    timeouts = 0
+
     for server_config in servers:
         url = server_config.get('RIPPLE_API_URL', '')
         user = server_config.get('RIPPLE_API_USER', '')
@@ -56,6 +59,10 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
                 url, json.dumps(data), auth=auth, verify=False, timeout=5)
         except TypeError:  # e.g. json encode error
             raise
+        except (requests.exceptions.Timeout, ssl.SSLError):
+            timeouts += 1
+            error = e
+            continue
         except Exception as e:
             error = e
             continue
@@ -75,6 +82,10 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
                 result.get('error_message', 'no_message'),
             )
             continue
+
+    if timeouts == len(servers):
+        raise RippleApiError('Timeout', '', 'rippled timed out')
+
     raise error
 
 
