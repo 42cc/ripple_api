@@ -61,7 +61,6 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
             raise
         except (requests.exceptions.Timeout, ssl.SSLError) as e:
             timeouts += 1
-            error = e
             continue
         except Exception as e:
             error = e
