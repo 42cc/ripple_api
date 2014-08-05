@@ -38,7 +38,12 @@ def submit_task(transaction):
     if transaction:
         logger = logging.getLogger('ripple')
         try:
-            response = submit(transaction.tx_blob)
+            while True:
+                response = submit(transaction.tx_blob)
+                # check if server response is valid
+                if response['engine_result'] != "telINSUF_FEE_P":
+                    break
+
         except RippleApiError, e:
             logger.error(e)
             transaction.status = Transaction.FAILURE
