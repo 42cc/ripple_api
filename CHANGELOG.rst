@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.4
+=====
+* retry transaction status if got telINSUF_FEE_P from server
+
 
 0.0.3
 =====
