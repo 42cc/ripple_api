@@ -2,7 +2,7 @@
 Changelog
 =========
 
-0.0.4
+0.0.10
 =====
 * retry transaction status if got telINSUF_FEE_P from server
 
