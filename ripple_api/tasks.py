@@ -2,9 +2,10 @@
 from requests import ConnectionError
 from celery import task
 import logging
+import time
 
 from .models import Transaction
-from ripple_api import RippleApiError, sign, submit
+from ripple_api import RippleApiError, sign, submit, tx
 
 
 @task
@@ -39,6 +40,17 @@ def submit_task(transaction):
         logger = logging.getLogger('ripple')
         try:
             response = submit(transaction.tx_blob)
+            if response['engine_result'] == "telINSUF_FEE_P":
+                # ripple server too busy to forward or process your transaction
+                while True:
+                    time.sleep(2)
+                    tx_response = tx(transaction.hash)
+                    status = tx_response.get('meta', {}).get('TransactionResult')
+                    # check if tx status is available
+                    if status:
+                        response['engine_result'] = status
+                        break
+
         except RippleApiError, e:
             logger.error(e)
             transaction.status = Transaction.FAILURE
