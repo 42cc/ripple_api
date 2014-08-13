@@ -9,7 +9,6 @@ import ssl
 
 # thirdparty imports:
 import requests
-from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
@@ -29,24 +28,39 @@ class RippleApiError(Exception):
 
 
 def call_api(data, server_url=None, api_user=None, api_password=None):
+    try:
+        from django.conf import settings
+        if server_url and not (api_user or api_password):
+            servers = filter(
+                lambda item: item.get('RIPPLE_API_URL', '') == server_url,
+                settings.RIPPLE_API_DATA
+            )
+            servers = servers or [{'RIPPLE_API_URL': server_url}]
+        elif server_url and (api_user or api_password):
+            servers = [
+                {
+                    'RIPPLE_API_URL': server_url,
+                    'RIPPLE_API_USER': api_user,
+                    'RIPPLE_API_PASSWORD': api_password,
+                }
+            ]
+        else:
+            servers = settings.RIPPLE_API_DATA
+    except ImportError:
+        if server_url:
+            servers = [
+                {
+                    'RIPPLE_API_URL': server_url,
+                    'RIPPLE_API_USER': api_user,
+                    'RIPPLE_API_PASSWORD': api_password,
+                }
+            ]
+        else:
+            raise RippleApiError(
+                'Config', '', 
+                'Either use django settings or send servers explicitly')
+        
     error = None
-    if server_url and not (api_user or api_password):
-        servers = filter(
-            lambda item: item.get('RIPPLE_API_URL', '') == server_url,
-            settings.RIPPLE_API_DATA
-        )
-        servers = servers or [{'RIPPLE_API_URL': server_url}]
-    elif server_url and (api_user or api_password):
-        servers = [
-            {
-                'RIPPLE_API_URL': server_url,
-                'RIPPLE_API_USER': api_user,
-                'RIPPLE_API_PASSWORD': api_password,
-            }
-        ]
-    else:
-        servers = settings.RIPPLE_API_DATA
-
     timeouts = 0
 
     for server_config in servers:
