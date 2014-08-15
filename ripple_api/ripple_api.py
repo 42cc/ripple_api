@@ -162,6 +162,36 @@ def tx(transaction_id, server_url=None, api_user=None, api_password=None):
     return call_api(data, server_url, api_user, api_password)
 
 
+def path_find(account, destination, amount, source_currencies, servers=None, 
+              server_url=None, api_user=None, api_password=None):
+    '''
+    Before sending IOU you need to find paths to the destination account
+    
+    Params:
+        `account`:
+            Source account
+
+        `destination`:
+            Destination account
+
+        `amount`:
+            IOU amount as in https://ripple.com/wiki/RPC_API#path_find
+
+        `source_currencies`:
+            List of source IOU currencies you'd like to pay with
+    '''
+    data = {'method': 'ripple_path_find',
+            'params': [{
+                'command': 'ripple_path_find',
+                'source_account': account,
+                'destination_account': destination,
+                'destination_amount': amount,
+                'source_currencies': source_currencies,
+                }]
+        }
+    return call_api(data, servers=servers, server_url=server_url, 
+                    api_user=api_user, api_password=api_password)
+
 def sign(account, secret, destination, amount, send_max=None, paths=None,
          flags=None, destination_tag=None, transaction_type='Payment',
          servers=None, server_url=None, api_user=None, api_password=None):
@@ -225,8 +255,8 @@ def sign(account, secret, destination, amount, send_max=None, paths=None,
                     api_user=api_user, api_password=api_password)
 
 
-def submit(tx_blob, servers=None, server_url=None, api_user=None, 
-           api_password=None):
+def submit(tx_blob, fail_hard=False, servers=None, server_url=None, 
+           api_user=None, api_password=None):
     """
     Submits a transaction to the network.
 
@@ -239,7 +269,9 @@ def submit(tx_blob, servers=None, server_url=None, api_user=None,
     data = {
         "method": "submit",
         "params": [{
-            "tx_blob": tx_blob}]}
+            "tx_blob": tx_blob,
+            'fail_hard': fail_hard,
+            }]}
 
     return call_api(data, servers=servers, server_url=server_url, 
                     api_user=api_user, api_password=api_password)
