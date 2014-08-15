@@ -27,7 +27,8 @@ class RippleApiError(Exception):
         return '%s. %s' % (self.error, self.message)
 
 
-def call_api(data, server_url=None, api_user=None, api_password=None):
+def call_api(data, servers=None, server_url=None, api_user=None, 
+             api_password=None):
     try:
         from django.conf import settings
         if server_url and not (api_user or api_password):
@@ -47,18 +48,19 @@ def call_api(data, server_url=None, api_user=None, api_password=None):
         else:
             servers = settings.RIPPLE_API_DATA
     except ImportError:
-        if server_url:
-            servers = [
-                {
-                    'RIPPLE_API_URL': server_url,
-                    'RIPPLE_API_USER': api_user,
-                    'RIPPLE_API_PASSWORD': api_password,
-                }
-            ]
-        else:
-            raise RippleApiError(
-                'Config', '', 
-                'Either use django settings or send servers explicitly')
+        if servers is None:
+            if server_url:
+                servers = [
+                    {
+                        'RIPPLE_API_URL': server_url,
+                        'RIPPLE_API_USER': api_user,
+                        'RIPPLE_API_PASSWORD': api_password,
+                        }
+                    ]
+            else:
+                raise RippleApiError(
+                    'Config', '', 
+                    'Either use django settings or send servers explicitly')
         
     error = None
     timeouts = 0
@@ -160,10 +162,9 @@ def tx(transaction_id, server_url=None, api_user=None, api_password=None):
     return call_api(data, server_url, api_user, api_password)
 
 
-def sign(
-        account, secret, destination, amount, send_max=None, paths=None,
-        flags=None, destination_tag=None, transaction_type='Payment',
-        server_url=None, api_user=None, api_password=None):
+def sign(account, secret, destination, amount, send_max=None, paths=None,
+         flags=None, destination_tag=None, transaction_type='Payment',
+         servers=None, server_url=None, api_user=None, api_password=None):
     """
     After you've created a transaction it must be cryptographically signed using the secret belonging to the owner of
     the sending address. Signing a transaction prior to submission allows you to maintain closer control over
@@ -207,7 +208,7 @@ def sign(
                     "TransactionType": transaction_type,
                     "Account": account,
                     "Destination": destination,
-                    "Amount": amount
+                    "Amount": amount,
                 }
             }]}
 
@@ -220,10 +221,12 @@ def sign(
     if destination_tag:
         data['params'][0]['tx_json']['DestinationTag'] = destination_tag
 
-    return call_api(data, server_url, api_user, api_password)
+    return call_api(data, servers=servers, server_url=server_url, 
+                    api_user=api_user, api_password=api_password)
 
 
-def submit(tx_blob, server_url=None, api_user=None, api_password=None):
+def submit(tx_blob, servers=None, server_url=None, api_user=None, 
+           api_password=None):
     """
     Submits a transaction to the network.
 
@@ -238,7 +241,8 @@ def submit(tx_blob, server_url=None, api_user=None, api_password=None):
         "params": [{
             "tx_blob": tx_blob}]}
 
-    return call_api(data, server_url, api_user, api_password)
+    return call_api(data, servers=servers, server_url=server_url, 
+                    api_user=api_user, api_password=api_password)
 
 
 def balance(
