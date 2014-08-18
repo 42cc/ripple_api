@@ -12,13 +12,32 @@ from ripple_api import RippleApiError, sign, submit, tx
 def sign_task(transaction, secret):
     logger = logging.getLogger('ripple')
 
-    if transaction.currency == 'XRP':
-        amount = transaction.value
-    else:
-        amount = {"currency": transaction.currency, "value": str(transaction.value), "issuer": transaction.issuer}
-
     try:
-        response = sign(transaction.account, secret, transaction.destination, amount)
+        if transaction.currency == 'XRP':
+            amount = transaction.value
+        else:
+            amount = {"currency": transaction.currency, 
+                      "value": str(transaction.value), 
+                      "issuer": transaction.destination}
+            paths = path_find(transaction.account,
+                              transaction.destination,
+                              amount,
+                              [{'currency': transaction.currency,
+                                'issuer': transaction.account.
+                                },
+                               ])
+            if len(paths['alternatives'])==0:
+                raise RippleApiError('no path', '', 
+                                     'No path between %s and %s for %s' % (
+                        transaction.account, transaction.destination, amount))
+            pass
+
+        response = sign(transaction.account, 
+                        secret, 
+                        transaction.destination, 
+                        amount,
+                        paths = paths['alternatives'][0]['paths_computed']
+                        )
     except (RippleApiError, ConnectionError), e:
         transaction.status = Transaction.FAILURE
         transaction.save()
