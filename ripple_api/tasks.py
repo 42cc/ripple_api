@@ -23,7 +23,7 @@ def sign_task(transaction, secret):
                               transaction.destination,
                               amount,
                               [{'currency': transaction.currency,
-                                'issuer': transaction.account.
+                                'issuer': transaction.account,
                                 },
                                ])
             if len(paths['alternatives'])==0:
