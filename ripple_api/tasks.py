@@ -5,7 +5,7 @@ import logging
 import time
 
 from .models import Transaction
-from ripple_api import RippleApiError, sign, submit, tx
+from ripple_api import RippleApiError, path_find, sign, submit, tx
 
 
 @task
