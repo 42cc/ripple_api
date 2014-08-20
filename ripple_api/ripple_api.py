@@ -28,7 +28,7 @@ class RippleApiError(Exception):
 
 
 def call_api(data, servers=None, server_url=None, api_user=None, 
-             api_password=None):
+             api_password=None, timeout=5):
     try:
         from django.conf import settings
         if server_url and not (api_user or api_password):
@@ -72,7 +72,7 @@ def call_api(data, servers=None, server_url=None, api_user=None,
         auth = (user, pwd) if user or pwd else None
         try:
             response = requests.post(
-                url, json.dumps(data), auth=auth, verify=False, timeout=5)
+                url, json.dumps(data), auth=auth, verify=False, timeout=timeout)
         except TypeError:  # e.g. json encode error
             raise
         except (requests.exceptions.Timeout, ssl.SSLError, socket.timeout) as e:
@@ -107,7 +107,7 @@ def call_api(data, servers=None, server_url=None, api_user=None,
 def account_tx(
         account, ledger_index_min=-1, ledger_index_max=-1, binary=False,
         forward=False, limit=None, marker=None,
-        server_url=None, api_user=None, api_password=None):
+        server_url=None, api_user=None, api_password=None, timeout=5):
     """
     Fetch a list of transactions that applied to this account.
 
@@ -144,10 +144,11 @@ def account_tx(
     if marker:
         data['params'][0]['marker'] = marker
 
-    return call_api(data, server_url, api_user, api_password)
+    return call_api(data, server_url, api_user, api_password, timeout=timeout)
 
 
-def tx(transaction_id, server_url=None, api_user=None, api_password=None):
+def tx(transaction_id, server_url=None, api_user=None, api_password=None, 
+       timeout=5):
     """
     Return information about a transaction.
 
@@ -159,11 +160,11 @@ def tx(transaction_id, server_url=None, api_user=None, api_password=None):
     data = {"method": "tx",
             "params": [{'transaction': transaction_id}]}
 
-    return call_api(data, server_url, api_user, api_password)
+    return call_api(data, server_url, api_user, api_password, timeout=timeout)
 
 
 def path_find(account, destination, amount, source_currencies, servers=None, 
-              server_url=None, api_user=None, api_password=None):
+              server_url=None, api_user=None, api_password=None, timeout=5):
     '''
     Before sending IOU you need to find paths to the destination account
     
@@ -190,11 +191,13 @@ def path_find(account, destination, amount, source_currencies, servers=None,
                 }]
         }
     return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password)
+                    api_user=api_user, api_password=api_password, 
+                    timeout=timeout)
 
 def sign(account, secret, destination, amount, send_max=None, paths=None,
          flags=None, destination_tag=None, transaction_type='Payment',
-         servers=None, server_url=None, api_user=None, api_password=None):
+         servers=None, server_url=None, api_user=None, api_password=None,
+         timeout=5):
     """
     After you've created a transaction it must be cryptographically signed using the secret belonging to the owner of
     the sending address. Signing a transaction prior to submission allows you to maintain closer control over
@@ -252,11 +255,12 @@ def sign(account, secret, destination, amount, send_max=None, paths=None,
         data['params'][0]['tx_json']['DestinationTag'] = destination_tag
 
     return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password)
+                    api_user=api_user, api_password=api_password, 
+                    timeout=timeout)
 
 
 def submit(tx_blob, fail_hard=False, servers=None, server_url=None, 
-           api_user=None, api_password=None):
+           api_user=None, api_password=None, timeout=5):
     """
     Submits a transaction to the network.
 
@@ -274,18 +278,18 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
             }]}
 
     return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password)
+                    api_user=api_user, api_password=api_password, 
+                    timeout=timeout)
 
 
-def balance(
-        account, issuers, currency,
-        server_url=None, api_user=None, api_password=None):
+def balance(account, issuers, currency, server_url=None, api_user=None, 
+            api_password=None, timeout=5):
     results = call_api(
         {
             'method': 'account_lines',
             'params': [{'account': account}]
         },
-        server_url=None, api_user=None, api_password=None
+        server_url=None, api_user=None, api_password=None, timeout=timeout
     )
     total = Decimal('0.0')
     for line in results['lines']:
@@ -294,7 +298,7 @@ def balance(
     return total
 
 
-def is_trust_set(trusts, peer, currency='', limit=0):
+def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
     """
     checks if 'trusts' trusts 'peer' with specified currency and limit
 
@@ -322,6 +326,7 @@ def is_trust_set(trusts, peer, currency='', limit=0):
                 'peer': peer
             }]
         },
+        timeout=timeout,
     )
 
     status = trust_lines['status'] == 'success'
@@ -340,8 +345,9 @@ def is_trust_set(trusts, peer, currency='', limit=0):
 
 
 def book_offer(
-        taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='',
-        ledger='current', marker='', autobridge=True, server_url=None, api_user=None, api_password=None):
+    taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='',
+    ledger='current', marker='', autobridge=True, server_url=None, 
+    api_user=None, api_password=None, timeout=5):
     """
     Gets currency exchange rates
 
@@ -377,4 +383,4 @@ def book_offer(
     if taker_address:
         data["params"][0]["taker"] = taker_address
 
-    return call_api(data, server_url, api_user, api_password)
+    return call_api(data, server_url, api_user, api_password, timeout=timeout)
