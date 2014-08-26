@@ -6,6 +6,10 @@ Changelog
 =====
 * added path_find support to tasks.sign_task
 
+0.0.14
+=====
+Added path_find
+
 0.0.10
 =====
 * retry transaction status if got telINSUF_FEE_P from server
