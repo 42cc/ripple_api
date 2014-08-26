@@ -2,6 +2,14 @@
 Changelog
 =========
 
+0.0.16
+=====
+Fixed `tx` and `balance` calls
+
+0.0.15
+=====
+* added path_find support to tasks.sign_task
+
 0.0.14
 =====
 Added path_find
