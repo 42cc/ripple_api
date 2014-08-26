@@ -147,8 +147,8 @@ def account_tx(
     return call_api(data, server_url, api_user, api_password, timeout=timeout)
 
 
-def tx(transaction_id, server_url=None, api_user=None, api_password=None, 
-       timeout=5):
+def tx(transaction_id, servers=None, server_url=None, api_user=None, 
+       api_password=None, timeout=5):
     """
     Return information about a transaction.
 
@@ -160,7 +160,9 @@ def tx(transaction_id, server_url=None, api_user=None, api_password=None,
     data = {"method": "tx",
             "params": [{'transaction': transaction_id}]}
 
-    return call_api(data, server_url, api_user, api_password, timeout=timeout)
+    return call_api(data, servers = servers, server_url = server_url, 
+                    api_user = api_user, api_password = api_password, 
+                    timeout = timeout)
 
 
 def path_find(account, destination, amount, source_currencies, servers=None, 
@@ -282,19 +284,22 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
                     timeout=timeout)
 
 
-def balance(account, issuers, currency, server_url=None, api_user=None, 
-            api_password=None, timeout=5):
-    results = call_api(
-        {
-            'method': 'account_lines',
-            'params': [{'account': account}]
-        },
-        server_url=None, api_user=None, api_password=None, timeout=timeout
-    )
+def balance(account, issuers, currency, servers=None, server_url=None, 
+            api_user=None, api_password=None, timeout=5):
+    results = call_api({ 'method': 'account_lines',
+                         'params': [{'account': account}]
+                         },
+                       servers = servers,
+                       server_url = server_url, 
+                       api_user = api_user, 
+                       api_password = api_password, 
+                       timeout = timeout,
+                       )
     total = Decimal('0.0')
     for line in results['lines']:
-        if line['currency'] == currency and (line['account'] in issuers or issuers is None):
-            total += Decimal(line['balance'])
+        if line['currency'] == currency:
+            if issuers is None or line['account'] in issuers:
+                total += Decimal(line['balance'])
     return total
 
 
