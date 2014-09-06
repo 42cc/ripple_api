@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.17
+====
+Added configurable (in settings) timeout to management/commands/process_transactions.py
+
 0.0.16
 =====
 Fixed `tx` and `balance` calls
