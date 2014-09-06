@@ -17,9 +17,11 @@ MAX_RESULTS = 200
 
 
 def get_min_ledger_index():
-    transactions = Transaction.objects.filter(status__in=[Transaction.RECEIVED, Transaction.PROCESSED,
-                                                          Transaction.MUST_BE_RETURN, Transaction.RETURNING,
-                                                          Transaction.RETURNED]).order_by('-pk')
+    transactions = Transaction.objects.filter(status__in=[
+            Transaction.RECEIVED, Transaction.PROCESSED,
+            Transaction.MUST_BE_RETURN, Transaction.RETURNING,
+            Transaction.RETURNED
+            ]).order_by('-pk')
     return transactions[0].ledger_index if transactions else -1
 
 
@@ -60,7 +62,8 @@ class Command(NoArgsCommand):
             try:
                 response = account_tx(settings.RIPPLE_ACCOUNT, 
                                       ledger_min_index, limit=200, 
-                                      marker=marker)
+                                      marker=marker,
+                                      timeout=timeout)
                 # self.logger.info(self.format_log_message(response))
             except (RippleApiError, ConnectionError), e:
                 self.logger.error(self.format_log_message(e))
