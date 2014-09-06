@@ -10,6 +10,7 @@ Settings
 * ``RIPPLE_API_DATA[0]['RIPPLE_API_URL']``
 * ``RIPPLE_API_DATA[0]['RIPPLE_API_USER']``
 * ``RIPPLE_API_DATA[0]['RIPPLE_API_PASSWORD']``
+* ``RIPPLE_TIMEOUT`` - timeout for django manamgement command calls
 
 Example Config::
 
