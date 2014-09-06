@@ -48,13 +48,19 @@ class Command(NoArgsCommand):
 
         """
         start_time = datetime.datetime.now()
-        self.logger.info(self.format_log_message('Looking for new ripple transactions since last run'))
+        self.logger.info(self.format_log_message(
+                'Looking for new ripple transactions since last run'))
         ledger_min_index = get_min_ledger_index()
         marker = None
         has_results = True
+        try: timeout = settings.RIPPLE_TIMEOUT
+        except AttributeError: timeout = 5
+
         while has_results:
             try:
-                response = account_tx(settings.RIPPLE_ACCOUNT, ledger_min_index, limit=200, marker=marker)
+                response = account_tx(settings.RIPPLE_ACCOUNT, 
+                                      ledger_min_index, limit=200, 
+                                      marker=marker)
                 # self.logger.info(self.format_log_message(response))
             except (RippleApiError, ConnectionError), e:
                 self.logger.error(self.format_log_message(e))
@@ -90,11 +96,14 @@ class Command(NoArgsCommand):
                             currency=amount['currency'],
                             issuer=amount['issuer'], value=amount['value']
                         )
-                        self.logger.info(self.format_log_message("Transaction saved: %s", transaction_object))
-            if (datetime.datetime.now() - start_time >= datetime.timedelta(seconds=270) and has_results):
+                        self.logger.info(self.format_log_message(
+                                "Transaction saved: %s", transaction_object))
+            if (datetime.datetime.now() - start_time 
+                >= datetime.timedelta(seconds=270) and has_results):
                 has_results = False
                 self.logger.error(
-                    'Process_transactions command terminated because (270 seconds) timeout: ' + unicode(marker))
+                    'Process_transactions command terminated because '
+                    '(270 seconds) timeout: ' + unicode(marker))
 
     def check_submitted_transactions(self):
         """
