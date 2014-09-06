@@ -2,7 +2,7 @@
 Changelog
 =========
 
-0.0.17
+0.0.17.1
 ====
 Added configurable (in settings) timeout to management/commands/process_transactions.py
 
