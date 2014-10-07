@@ -24,7 +24,7 @@ class RippleApiError(Exception):
         self.message = message
 
     def __str__(self):
-        return '%s. %s' % (self.error, self.message)
+        return '%s: %s. %s' % (self.code, self.error, self.message)
 
 
 def call_api(data, servers=None, server_url=None, api_user=None, 
@@ -199,7 +199,7 @@ def path_find(account, destination, amount, source_currencies, servers=None,
 def sign(account, secret, destination, amount, send_max=None, paths=None,
          flags=None, destination_tag=None, transaction_type='Payment',
          servers=None, server_url=None, api_user=None, api_password=None,
-         timeout=5):
+         timeout=5, fee=10000):
     """
     After you've created a transaction it must be cryptographically signed using the secret belonging to the owner of
     the sending address. Signing a transaction prior to submission allows you to maintain closer control over
@@ -244,6 +244,7 @@ def sign(account, secret, destination, amount, send_max=None, paths=None,
                     "Account": account,
                     "Destination": destination,
                     "Amount": amount,
+                    "Fee": fee,
                 }
             }]}
 
