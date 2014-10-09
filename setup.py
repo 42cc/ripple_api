@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-ripple_api',
-    version='0.0.17.2',
+    version='0.0.18',
     packages=find_packages(),
     requires=['python (>= 2.7)', 'requests', 'django_model_utils'],
     install_requires=['requests<2.3.0', 'django-model-utils<1.4.0'],
