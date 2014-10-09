@@ -75,7 +75,8 @@ class Command(NoArgsCommand):
 
             for transaction in transactions:
                 tr_tx = transaction['tx']
-                amount = tr_tx.get('Amount', {})
+                meta = tr_tx.get('meta', {})
+                amount = meta.get('DeliveredAmount') or tr_tx.get('Amount', {})
 
                 unprocessed_unstored_transactions = (
                     tr_tx['TransactionType'] == 'Payment' and
