@@ -39,8 +39,9 @@ class Command(NoArgsCommand):
             return message
 
     def handle_noargs(self, **options):
-        #self.retry_failed_transactions()
+        self.retry_failed_transactions()
         self.monitor_transactions()
+        self.return_funds()
         self.submit_pending_transactions()
         self.check_submitted_transactions()
 
@@ -60,8 +61,8 @@ class Command(NoArgsCommand):
 
         while has_results:
             try:
-                response = account_tx(settings.RIPPLE_ACCOUNT, 
-                                      ledger_min_index, limit=200, 
+                response = account_tx(settings.RIPPLE_ACCOUNT,
+                                      ledger_min_index, limit=200,
                                       marker=marker,
                                       timeout=timeout)
                 # self.logger.info(self.format_log_message(response))
@@ -104,7 +105,7 @@ class Command(NoArgsCommand):
                         )
                         self.logger.info(self.format_log_message(
                                 "Transaction saved: %s", transaction_object))
-            if (datetime.datetime.now() - start_time 
+            if (datetime.datetime.now() - start_time
                 >= datetime.timedelta(seconds=270) and has_results):
                 has_results = False
                 self.logger.error(
@@ -156,8 +157,41 @@ class Command(NoArgsCommand):
             self.logger.info(self.format_log_message('Submit: %s', transaction))
             submit_task.apply((transaction,))
 
-    #def retry_failed_transactions(self):
-    #    self.logger.info('Retrying failed transactions')
-    #    for transaction in Transaction.objects.filter(status=Transaction.FAILURE):
-    #        self.logger.info(self.format_log_message('Found %s', transaction))
-    #        sign_task.apply((transaction, settings.RIPPLE_SECRET), link=submit_task.s())
+    def return_funds(self):
+        self.logger.info('Returning failed stakes')
+        for transaction in Transaction.objects.filter(
+                status=Transaction.MUST_BE_RETURN):
+            self.logger.info("Transaction %s must be return." % transaction.pk)
+
+            ret_transaction = Transaction.objects.create(
+                account=settings.RIPPLE_ACCOUNT,
+                destination=transaction.account,
+                currency=transaction.currency,
+                value=transaction.value,
+                status=Transaction.PENDING,
+                parent=transaction
+            )
+            sign_task.apply((ret_transaction, settings.RIPPLE_SECRET))
+            transaction.status = Transaction.RETURNING
+            transaction.save()
+            self.logger.info("New transaction created for returning %s", ret_transaction.pk)
+
+    def retry_failed_transactions(self):
+        self.logger.info('Retrying failed transactions')
+        for transaction in Transaction.objects.filter(
+                status=Transaction.FAILURE):
+            self.logger.info(self.format_log_message('Found %s', transaction))
+
+            retry_transaction = Transaction.objects.create(
+                account=transaction.account,
+                destination=transaction.destination,
+                currency=transaction.currency,
+                value=transaction.value,
+                status=Transaction.PENDING,
+                parent=transaction.parent
+            )
+            sign_task.apply((retry_transaction, settings.RIPPLE_SECRET))
+            self.logger.info("New transaction created for returning %s", retry_transaction.pk)
+            transaction.status = Transaction.FAIL_FIXED
+            transaction.save()
+            self.logger.info("Fixed the transaction")

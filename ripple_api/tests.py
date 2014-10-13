@@ -42,29 +42,91 @@ class TestRipple(TestCase):
         self.assertEqual(transaction.destination_tag, 232)
 
 
-    @patch('ripple_api.ripple_api.call_api')
-    def test_retry(self, call_api_mock):
+    @patch('ripple_api.tasks.sign')
+    @patch('ripple_api.tasks.path_find')
+    def test_retry(self, path_find_mock, sign_mock):
         transaction = Transaction.objects.create(
             account='account',
             destination='destination',
             hash='hash',
             status=Transaction.FAILURE,
+            currency='XXX',
             tx_blob='tx_blob')
 
-
-        def side_effect():
-            yield {'tx_blob': 'new_tx_blob',
-                    'tx_json': {
-                        'hash': 'new_hash'
-                    }}
-            yield {'engine_result': 'tesSUCCESS'}
-
-        call_api_mock.side_effect = side_effect()
+        path_find_mock.return_value = {
+            'alternatives': [{
+                'paths_computed': [
+                    [{u'account': u'rp2PaYDxVwDvaZVLEQv7bHhoFQEyX1mEx7',
+                      u'type': 1,
+                      u'type_hex': u'0000000000000001'}],
+                ]},
+            ],
+        }
+        sign_mock.return_value = {
+            'tx_blob': 'tx_new_blob',
+            'tx_json': {
+                'hash': 'new_hash'
+            }
+        }
         Command().retry_failed_transactions()
+
         transaction = Transaction.objects.get(id=transaction.id)
-        self.assertEqual(transaction.status, Transaction.SUBMITTED)
-        self.assertEqual(transaction.hash, 'new_hash')
-        self.assertEqual(transaction.tx_blob, 'new_tx_blob')
+        self.assertEqual(transaction.status, Transaction.FAIL_FIXED)
+
+        retry_transaction = Transaction.objects.get(hash='new_hash')
+        self.assertEqual(retry_transaction.hash, 'new_hash')
+        self.assertEqual(retry_transaction.tx_blob, 'tx_new_blob')
+        self.assertEqual(retry_transaction.status, Transaction.PENDING)
+        self.assertEqual(transaction.value, retry_transaction.value)
+        self.assertEqual(transaction.account, retry_transaction.account)
+        self.assertEqual(transaction.currency, retry_transaction.currency)
+        self.assertEqual(
+            transaction.destination,
+            retry_transaction.destination
+        )
+        self.assertEqual(transaction.source_tag, retry_transaction.source_tag)
+        self.assertEqual(
+            transaction.destination_tag,
+            retry_transaction.destination_tag
+        )
+
+    @patch('ripple_api.tasks.sign')
+    @patch('ripple_api.tasks.path_find')
+    def test_return_funds(self, path_find_mock, sign_mock):
+        transaction = Transaction.objects.create(
+            account='account',
+            hash='hash4',
+            status=Transaction.MUST_BE_RETURN,
+            currency='CCK',
+            value='100.1'
+        )
+        path_find_mock.return_value = {
+            'alternatives': [{
+                'paths_computed': [
+                    [{u'account': u'rp2PaYDxVwDvaZVLEQv7bHhoFQEyX1mEx7',
+                      u'type': 1,
+                      u'type_hex': u'0000000000000001'}],
+                ]},
+            ],
+        }
+        sign_mock.return_value = {
+            'tx_blob': 'tx_blob',
+            'tx_json': {
+                'hash': 'hash5'
+            }
+        }
+
+        Command().return_funds()
+        returning_transaction = Transaction.objects.get(hash='hash5')
+
+        self.assertEqual(
+            returning_transaction.destination,
+            transaction.account
+        )
+        self.assertEqual(returning_transaction.status, Transaction.PENDING)
+        self.assertEqual(returning_transaction.tx_blob, 'tx_blob')
+
+        self.assertEqual(returning_transaction.parent, transaction)
 
     @patch('ripple_api.ripple_api.call_api')
     def test_check_submitted_transactions(self, call_api_mock):
