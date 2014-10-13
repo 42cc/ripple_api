@@ -87,9 +87,7 @@ class Command(NoArgsCommand):
                     isinstance(amount, dict) and
                     not Transaction.objects.filter(hash=tr_tx['hash'])
                 )
-
                 if unprocessed_unstored_transactions:
-
                         self.logger.info(self.format_log_message('Saving transaction: %s', transaction))
                         destination_tag = tr_tx.get('DestinationTag')
                         source_tag = tr_tx.get('SourceTag')
