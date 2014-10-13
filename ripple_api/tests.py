@@ -21,7 +21,8 @@ class TestRipple(TestCase):
         data = {'transactions': [
             {'tx': {'Account': 'account', 'Destination': settings.RIPPLE_ACCOUNT,
                 'TransactionType': 'Payment', 'Amount': {'currency': 'CCK', 'issuer': 'p2pay', 'value': '1.2'},
-                'hash': 'hash1', 'ledger_index': 1, 'DestinationTag': 232 }},
+                'hash': 'hash1', 'ledger_index': 1, 'DestinationTag': 232 },
+             'meta': {'TransactionResult': 'tesSUCCESS'}},
         ]}
         call_api_mock.return_value = data
 
