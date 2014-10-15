@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.0.18.2
+====
+* return funds for transactions marked as MUST_BE_RETURN
+* retry failed transactions by creating new ones
+
 0.0.17.1
 ====
 Added configurable (in settings) timeout to management/commands/process_transactions.py

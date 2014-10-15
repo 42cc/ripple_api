@@ -19,19 +19,22 @@ class Transaction(models.Model):
     SUCCESS = 8
     CREATED = 9
     SUCCESS_PROCESSED = 10
+    FAIL_FIXED = 100
 
     STATUS_CHOICES = (
-        (RECEIVED, u'Transaction received'),
-        (PROCESSED, u'Transaction was processed'),
-        (MUST_BE_RETURN, u'This transaction must be returned to user'),
-        (RETURNING, u'Created new transaction for returning'),
-        (RETURNED, u'Transaction was returned'),
-        (PENDING, u'Pending to submit'),
-        (SUBMITTED, u'Transaction was submitted'),
-        (FAILURE, u'Transaction was failed'),
-        (SUCCESS, u'Transaction was completed successfully'),
-        (CREATED, u'Transaction was created but not sign'),
-        (SUCCESS_PROCESSED, u'Transaction was processed after successful submit'),
+        (RECEIVED, _(u'Transaction received')),
+        (PROCESSED, _(u'Transaction was processed')),
+        (MUST_BE_RETURN, _(u'This transaction must be returned to user')),
+        (RETURNING, _(u'Created new transaction for returning')),
+        (RETURNED, _(u'Transaction was returned')),
+        (PENDING, _(u'Pending to submit')),
+        (SUBMITTED, _(u'Transaction was submitted')),
+        (FAILURE, _(u'Transaction was failed')),
+        (SUCCESS, _(u'Transaction was completed successfully')),
+        (CREATED, _(u'Transaction was created but not sign')),
+        (SUCCESS_PROCESSED,
+            _(u'Transaction was processed after successful submit')),
+        (FAIL_FIXED, _(u'The failed transaction was fixed by a new retry'))
     )
 
     account = models.CharField(max_length=100)
