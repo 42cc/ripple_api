@@ -27,7 +27,7 @@ class RippleApiError(Exception):
         return '%s: %s. %s' % (self.code, self.error, self.message)
 
 
-def call_api(data, servers=None, server_url=None, api_user=None, 
+def call_api(data, servers=None, server_url=None, api_user=None,
              api_password=None, timeout=5):
     try:
         from django.conf import settings
@@ -59,9 +59,9 @@ def call_api(data, servers=None, server_url=None, api_user=None,
                     ]
             else:
                 raise RippleApiError(
-                    'Config', '', 
+                    'Config', '',
                     'Either use django settings or send servers explicitly')
-        
+
     error = None
     timeouts = 0
 
@@ -147,7 +147,7 @@ def account_tx(
     return call_api(data, server_url, api_user, api_password, timeout=timeout)
 
 
-def tx(transaction_id, servers=None, server_url=None, api_user=None, 
+def tx(transaction_id, servers=None, server_url=None, api_user=None,
        api_password=None, timeout=5):
     """
     Return information about a transaction.
@@ -160,16 +160,16 @@ def tx(transaction_id, servers=None, server_url=None, api_user=None,
     data = {"method": "tx",
             "params": [{'transaction': transaction_id}]}
 
-    return call_api(data, servers = servers, server_url = server_url, 
-                    api_user = api_user, api_password = api_password, 
+    return call_api(data, servers = servers, server_url = server_url,
+                    api_user = api_user, api_password = api_password,
                     timeout = timeout)
 
 
-def path_find(account, destination, amount, source_currencies, servers=None, 
+def path_find(account, destination, amount, source_currencies, servers=None,
               server_url=None, api_user=None, api_password=None, timeout=5):
     '''
     Before sending IOU you need to find paths to the destination account
-    
+
     Params:
         `account`:
             Source account
@@ -192,8 +192,8 @@ def path_find(account, destination, amount, source_currencies, servers=None,
                 'source_currencies': source_currencies,
                 }]
         }
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
 
 def sign(account, secret, destination, amount, send_max=None, paths=None,
@@ -257,12 +257,12 @@ def sign(account, secret, destination, amount, send_max=None, paths=None,
     if destination_tag:
         data['params'][0]['tx_json']['DestinationTag'] = destination_tag
 
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
 
 
-def submit(tx_blob, fail_hard=False, servers=None, server_url=None, 
+def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
            api_user=None, api_password=None, timeout=5):
     """
     Submits a transaction to the network.
@@ -280,20 +280,20 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
             'fail_hard': fail_hard,
             }]}
 
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
 
 
-def balance(account, issuers, currency, servers=None, server_url=None, 
+def balance(account, issuers, currency, servers=None, server_url=None,
             api_user=None, api_password=None, timeout=5):
     results = call_api({ 'method': 'account_lines',
                          'params': [{'account': account}]
                          },
                        servers = servers,
-                       server_url = server_url, 
-                       api_user = api_user, 
-                       api_password = api_password, 
+                       server_url = server_url,
+                       api_user = api_user,
+                       api_password = api_password,
                        timeout = timeout,
                        )
     total = Decimal('0.0')
@@ -352,7 +352,7 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
 
 def book_offer(
     taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='',
-    ledger='current', marker='', autobridge=True, server_url=None, 
+    ledger='current', marker='', autobridge=True, server_url=None,
     api_user=None, api_password=None, timeout=5):
     """
     Gets currency exchange rates
@@ -390,3 +390,43 @@ def book_offer(
         data["params"][0]["taker"] = taker_address
 
     return call_api(data, server_url, api_user, api_password, timeout=timeout)
+
+
+def create_offer(taker_pays, taker_gets,
+                 account=None,
+                 secret=None,
+                 timeout=5,
+                 fee=10000, flags=0):
+    """
+    taker - user, that accepts your offer
+    takes:
+        taker_pays -  {
+            'amount':   - float - amount to buy
+            'currency': - str   - currency
+            'issuer':   - str   - issuer
+        }
+        taker_gets -  {
+            'amount':   - float - amount to sell
+            'currency': - str   - currency
+            'issuer':   - str   - issuer
+        }
+    """
+
+    taker_pays['amount'] = "%.12f" % taker_pays['amount']
+    taker_gets['amount'] = "%.12f" % taker_gets['amount']
+    offer = {
+        "method": "submit",
+        "params": [{
+            "secret": secret,
+            "tx_json": {
+                "TransactionType": "OfferCreate",
+                "Fee": str(fee),
+                "Flags": flags,
+                "Account": account,
+                "TakerPays": taker_pays,
+                "TakerGets": taker_gets,
+            },
+        }]
+    }
+
+    return call_api(offer, timeout=timeout)
