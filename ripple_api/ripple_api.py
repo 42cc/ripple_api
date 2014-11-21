@@ -27,7 +27,7 @@ class RippleApiError(Exception):
         return '%s: %s. %s' % (self.code, self.error, self.message)
 
 
-def call_api(data, servers=None, server_url=None, api_user=None, 
+def call_api(data, servers=None, server_url=None, api_user=None,
              api_password=None, timeout=5):
     try:
         from django.conf import settings
@@ -59,9 +59,9 @@ def call_api(data, servers=None, server_url=None, api_user=None,
                     ]
             else:
                 raise RippleApiError(
-                    'Config', '', 
+                    'Config', '',
                     'Either use django settings or send servers explicitly')
-        
+
     error = None
     timeouts = 0
 
@@ -147,7 +147,7 @@ def account_tx(
     return call_api(data, server_url, api_user, api_password, timeout=timeout)
 
 
-def tx(transaction_id, servers=None, server_url=None, api_user=None, 
+def tx(transaction_id, servers=None, server_url=None, api_user=None,
        api_password=None, timeout=5):
     """
     Return information about a transaction.
@@ -160,16 +160,16 @@ def tx(transaction_id, servers=None, server_url=None, api_user=None,
     data = {"method": "tx",
             "params": [{'transaction': transaction_id}]}
 
-    return call_api(data, servers = servers, server_url = server_url, 
-                    api_user = api_user, api_password = api_password, 
-                    timeout = timeout)
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
+                    timeout=timeout)
 
 
-def path_find(account, destination, amount, source_currencies, servers=None, 
+def path_find(account, destination, amount, source_currencies, servers=None,
               server_url=None, api_user=None, api_password=None, timeout=5):
     '''
     Before sending IOU you need to find paths to the destination account
-    
+
     Params:
         `account`:
             Source account
@@ -192,9 +192,10 @@ def path_find(account, destination, amount, source_currencies, servers=None,
                 'source_currencies': source_currencies,
                 }]
         }
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
+
 
 def sign(account, secret, destination, amount, send_max=None, paths=None,
          flags=None, destination_tag=None, transaction_type='Payment',
@@ -257,12 +258,12 @@ def sign(account, secret, destination, amount, send_max=None, paths=None,
     if destination_tag:
         data['params'][0]['tx_json']['DestinationTag'] = destination_tag
 
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
 
 
-def submit(tx_blob, fail_hard=False, servers=None, server_url=None, 
+def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
            api_user=None, api_password=None, timeout=5):
     """
     Submits a transaction to the network.
@@ -280,21 +281,21 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
             'fail_hard': fail_hard,
             }]}
 
-    return call_api(data, servers=servers, server_url=server_url, 
-                    api_user=api_user, api_password=api_password, 
+    return call_api(data, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
                     timeout=timeout)
 
 
-def balance(account, issuers, currency, servers=None, server_url=None, 
+def balance(account, issuers, currency, servers=None, server_url=None,
             api_user=None, api_password=None, timeout=5):
-    results = call_api({ 'method': 'account_lines',
-                         'params': [{'account': account}]
-                         },
-                       servers = servers,
-                       server_url = server_url, 
-                       api_user = api_user, 
-                       api_password = api_password, 
-                       timeout = timeout,
+    results = call_api({'method': 'account_lines',
+                        'params': [{'account': account}]
+                        },
+                       servers=servers,
+                       server_url=server_url,
+                       api_user=api_user,
+                       api_password=api_password,
+                       timeout=timeout,
                        )
     total = Decimal('0.0')
     for line in results['lines']:
@@ -352,7 +353,7 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
 
 def book_offer(
     taker_pays_curr, taker_pays_curr_issuer, taker_gets_curr, taker_gets_curr_issuer, taker_address='',
-    ledger='current', marker='', autobridge=True, server_url=None, 
+    ledger='current', marker='', autobridge=True, server_url=None,
     api_user=None, api_password=None, timeout=5):
     """
     Gets currency exchange rates
@@ -360,14 +361,17 @@ def book_offer(
     Params:
         'taker_pays':
             Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
-            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+            The currency and issuer the taker pays.
+            Do not specify an issuing account if the currency is XRP.
         'taker_gets':
             Specified in the following forms 'XRP' or 'USD/rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
-            The currency and issuer the taker pays. Do not specify an issuing account if the currency is XRP.
+            The currency and issuer the taker pays. Do not specify an issuing
+            account if the currency is XRP.
         'ledger' (optional):
             "current" (default). "closed", "validated", ledger_index, or ledger.
         'taker' (optional):
-            The address of the taker. This affects the funding of offers by owners as they may need to pay transfer fees.
+            The address of the taker. This affects the funding of offers by
+            owners as they may need to pay transfer fees.
             For a neutral point of view specify ADDRESS_ONE (rrrrrrrrrrrrrrrrrrrrBZbvji).
         'marker' (optional):
             Specify the paging marker as JSON. Defaults to "".
@@ -375,8 +379,12 @@ def book_offer(
         'autobridge' (optional):
             If present, specifies synthesize orders through XRP books. Defaults to true
     """
-    taker_pays = 'XRP' if taker_pays_curr == 'XRP' else {"currency": taker_pays_curr, "issuer": taker_pays_curr_issuer}
-    taker_gets = 'XRP' if taker_gets_curr == 'XRP' else {"currency": taker_gets_curr, "issuer": taker_gets_curr_issuer}
+    taker_pays = 'XRP' if taker_pays_curr == 'XRP' else {
+        "currency": taker_pays_curr, "issuer": taker_pays_curr_issuer
+    }
+    taker_gets = 'XRP' if taker_gets_curr == 'XRP' else {
+        "currency": taker_gets_curr, "issuer": taker_gets_curr_issuer
+    }
     data = {
         "method": "book_offers",
         "params": [{
@@ -390,3 +398,121 @@ def book_offer(
         data["params"][0]["taker"] = taker_address
 
     return call_api(data, server_url, api_user, api_password, timeout=timeout)
+
+
+def create_offer(taker_pays, taker_gets,
+                 account=None,
+                 secret=None,
+                 timeout=5,
+                 fee=10000, flags=0):
+    """
+    taker - user, that accepts your offer
+    takes:
+        taker_pays -  {
+            'amount':   - float - amount to buy
+            'currency': - str   - currency
+            'issuer':   - str   - issuer
+        }
+        taker_gets -  {
+            'amount':   - float - amount to sell
+            'currency': - str   - currency
+            'issuer':   - str   - issuer
+        }
+    """
+
+    taker_pays['amount'] = "%.12f" % taker_pays['amount']
+    taker_gets['amount'] = "%.12f" % taker_gets['amount']
+    offer = {
+        "method": "submit",
+        "params": [{
+            "secret": secret,
+            "tx_json": {
+                "TransactionType": "OfferCreate",
+                "Fee": str(fee),
+                "Flags": flags,
+                "Account": account,
+                "TakerPays": taker_pays,
+                "TakerGets": taker_gets,
+            },
+        }]
+    }
+
+    return call_api(offer, timeout=timeout)
+
+
+def convert(amount_from,
+            currency_from, issuer_from,
+            currency_to, issuer_to,
+            taker_address='', offers_info='',
+            call_offer=True, default_rate=0,
+            sell=False, reverse=False):
+
+    offers_all = []
+    if reverse:
+        currency_from, currency_to = currency_to, currency_from
+        issuer_from, issuer_to = issuer_to, issuer_from
+
+    def check_offers(offers_info):
+        status = offers_info['status']
+        offers_all = offers_info['offers']
+        if not offers_all:
+            status = 'no_offers'
+        return status, offers_all
+
+    # find offers from provided
+    if offers_info:
+        status, offers_all = check_offers(offers_info)
+
+    if not offers_all and call_offer:
+        try:
+            offers_info = book_offer(
+                currency_from, issuer_from, currency_to, issuer_to,
+                taker_address=taker_address,
+            )
+            # conn_status = offers_info['status']
+            status, offers_all = check_offers(offers_info)
+        except Exception:
+            status = 'error'
+
+    # convert
+    amount_to = 0
+    if offers_all:
+        convert_left = Decimal(amount_from)
+        for offer in offers_all:
+            if 'taker_gets_funded' in offer:
+                pays = Decimal(offer['taker_pays_funded']['value'])
+                gets = Decimal(offer['taker_gets_funded']['value'])
+            else:
+                pays = Decimal(offer['TakerPays']['value'])
+                gets = Decimal(offer['TakerGets']['value'])
+
+            if not sell:
+                if convert_left < gets:
+                    rate = Decimal(offer['quality'])
+                    amount_to += convert_left * rate
+                    convert_left = 0
+                    break
+                convert_left -= gets
+                amount_to += pays
+            else:
+                if convert_left < pays:
+                    rate = Decimal(offer['quality'])
+                    amount_to += convert_left / rate
+                    convert_left = 0
+                    break
+                convert_left -= pays
+                amount_to += gets
+
+        status = 'success'
+        if convert_left:
+            rate = Decimal(offers_all[-1]['quality'])
+            amount_to += convert_left * rate if not sell else convert_left / rate
+            status = 'attn_not_enough_funds'
+
+    # get default rate if nothing found
+    elif not offers_all and default_rate:
+        status = 'default' if not status else status
+        amount_to = Decimal(default_rate) * Decimal(amount_from)
+
+    return {'status': status,
+            'amount_to': Decimal(amount_to)}
