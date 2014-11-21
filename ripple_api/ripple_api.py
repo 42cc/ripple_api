@@ -514,8 +514,5 @@ def convert(amount_from,
         status = 'default' if not status else status
         amount_to = Decimal(default_rate) * Decimal(amount_from)
 
-    print 'convertion status: %s, converted %s %s to %s %s' % (
-        status, amount_from, currency_from, amount_to, currency_to)
-
     return {'status': status,
             'amount_to': Decimal(amount_to)}
