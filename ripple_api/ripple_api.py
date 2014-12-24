@@ -413,15 +413,23 @@ def create_offer(taker_pays, taker_gets,
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
+        or Decimal(amount) if currency is XRP
         taker_gets -  {
             'amount':   - float - amount to sell
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
+        or Decimal(amount) if currency is XRP
     """
 
-    taker_pays['amount'] = "%.12f" % taker_pays['amount']
-    taker_gets['amount'] = "%.12f" % taker_gets['amount']
+    if isinstance(taker_pays, dict):
+        taker_pays['amount'] = "%.12f" % taker_pays['amount']
+    else:
+        taker_pays = "%.12f" % taker_pays
+    if isinstance(taker_gets, dict):
+        taker_gets['amount'] = "%.12f" % taker_gets['amount']
+    else:
+        taker_gets = "%.12f" % taker_gets
     offer = {
         "method": "submit",
         "params": [{
@@ -480,11 +488,11 @@ def convert(amount_from,
         convert_left = Decimal(amount_from)
         for offer in offers_all:
             if 'taker_gets_funded' in offer:
-                pays = Decimal(offer['taker_pays_funded']['value'])
-                gets = Decimal(offer['taker_gets_funded']['value'])
+                pays = Decimal(extract_value(offer['taker_pays_funded']))
+                gets = Decimal(extract_value(offer['taker_gets_funded']))
             else:
-                pays = Decimal(offer['TakerPays']['value'])
-                gets = Decimal(offer['TakerGets']['value'])
+                pays = Decimal(extract_value(offer['TakerPays']))
+                gets = Decimal(extract_value(offer['TakerGets']))
 
             if not sell:
                 if convert_left < gets:
@@ -516,3 +524,9 @@ def convert(amount_from,
 
     return {'status': status,
             'amount_to': Decimal(amount_to)}
+
+
+def extract_value(taker_pays_or_gets):
+    if isinstance(taker_pays_or_gets, dict):
+        return taker_pays_or_gets['value']
+    return taker_pays_or_gets
