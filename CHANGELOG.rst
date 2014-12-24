@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.21
+====
+Added XRP support to create_offer
+
 0.0.18.2
 ====
 * return funds for transactions marked as MUST_BE_RETURN
