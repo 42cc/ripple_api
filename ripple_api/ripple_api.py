@@ -530,3 +530,55 @@ def extract_value(taker_pays_or_gets):
     if isinstance(taker_pays_or_gets, dict):
         return taker_pays_or_gets['value']
     return taker_pays_or_gets
+
+
+def _error(resp):
+    return {'status': resp['status'],
+            'status_msg': resp['error_message']
+            }
+
+def buy_xrp(amount, account, secret):
+    """Trade USD -> XRP.
+
+    - amount: amount of XRP to buy in drops (1000000 = 1 XRP)
+    - account: ripple account
+    - secret: account's secret
+    """
+    logger.info("Trying to find paths")
+    paths = path_find(account, account, "%s" % amount, [{"currency": "USD"}])
+    if paths['status'] != 'success':
+        logger.error('Failed to find paths')
+        return _error(paths)
+
+    logger.info("Paths found successfully")
+    logger.info("Trying to sign transaction")
+
+    if len(paths['alternatives']) == 0:
+        msg = u'No path alternatives (probably no USD)'
+        paths['status'] = 'error'
+        paths['error_message'] = msg
+        logger.error(msg)
+        return _error(paths)
+    send_max = paths['alternatives'][0]['source_amount']
+    result = sign(account, secret, account, amount,
+                  send_max=send_max,
+                  paths=paths['alternatives'][0]['paths_computed'],
+                  flags=0)
+    if result['status'] != 'success':
+        logger.error('Failed to sign the transaction')
+        return _error(result)
+
+    logger.info("Transaction was successfully signed")
+    logger.info("Trying to submit transaction")
+
+    blob = result['tx_blob']
+    result = submit(blob)
+    if result['status'] != 'success':
+        return {'status': result['status'],
+                'status_msg': result['error']}
+
+    logger.info("Transaction was successfully submitted")
+
+    return {'status': 'success',
+            'bought': amount,
+            'sold': send_max['value']}

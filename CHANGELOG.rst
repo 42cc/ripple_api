@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.22
+====
+Added ability to trade USD -> XRP (`buy_xrp`)
+
 0.0.21
 ====
 Added XRP support to create_offer
