@@ -13,7 +13,8 @@ logger = logging.getLogger('ripple_trade')
 
 def sell_all(buy_expected, sell_needed,
              account, secret, timeout=5, fee=10000,
-             default_precission=Decimal('0.00000001')):
+             default_precission=Decimal('0.00000001'),
+             servers=None):
     """
     Exchange the entire sell needed amount, even if it means obtaining more
     than the buy expected amount in exchange.
@@ -29,11 +30,18 @@ def sell_all(buy_expected, sell_needed,
         'currency': - str     - currency
         'issuer':   - str     - issuer
     }
+    account            - ripple account
+    secret             - ripple secret
+    timeout            - trade timeout (default: 5)
+    fee                - ripple fee (default: 10000)
+    default_precission - compare precission(default: 0.00000001)
+    servers            - ripple servers (default: none)
+
     returns: {
         'status':      - str    - 'success' / 'error',
         'status_msg':  - str    - 'status description'
-        'sold': 0,     - float  - the amount sold
-        'bought': 0    - float  - the amount bought
+        'sold':        - float  - the amount sold
+        'bought':      - float  - the amount bought
     }
 
     """
@@ -41,8 +49,8 @@ def sell_all(buy_expected, sell_needed,
                 (sell_needed['value'], sell_needed['currency'],
                  buy_expected['value'], buy_expected['currency']))
     offer = sell_all_or_cancel(buy_expected, sell_needed, account, secret,
-                               timeout, fee)
-    offer_result = get_trade_result(offer, timeout)
+                               timeout=timeout, fee=fee, servers=servers)
+    offer_result = get_trade_result(offer, timeout, servers)
     offer_result['sell_amount_left'] = Decimal(
         "%.12f" % float(sell_needed['value'] - offer_result['sold']))
 
@@ -56,7 +64,7 @@ def sell_all(buy_expected, sell_needed,
     return offer_result
 
 
-def get_trade_result(created_offer, timeout):
+def get_trade_result(created_offer, timeout, servers=None):
     """
     Get created offer result and process it to human readable format.
 
@@ -88,7 +96,7 @@ def get_trade_result(created_offer, timeout):
     logger.info("Transaction: %s" % tr_hash)
 
     # check transaction result
-    transaction = get_transaction_result(tr_hash)
+    transaction = get_transaction_result(tr_hash, timeout, servers)
 
     # if trade didn't happen
     if 'AffectedNodes' not in transaction.get('meta', ''):
@@ -111,14 +119,16 @@ def get_trade_result(created_offer, timeout):
             'bought': received}
 
 
-def get_transaction_result(tr_hash, timeout, attempts=5, wait=2):
+def get_transaction_result(tr_hash, timeout, servers, attempts=5, wait=2):
     """
     Get created offer hash and look for offer result after it's processing.
 
     takes:
-        tr_hash  - str - ripple transaction hash
-        attempts - int - number of attempts to check if trade happened
-        wait     - int - seconds to wait until next check
+        tr_hash  - str  - ripple transaction hash
+        timeout  - int  - transaction timeout
+        servers  - list - ripple servers
+        attempts - int  - number of attempts to check if trade happened
+        wait     - int  - seconds to wait until next check
     returns:
         transaction result if it's happened or None
 
@@ -126,11 +136,11 @@ def get_transaction_result(tr_hash, timeout, attempts=5, wait=2):
     transaction = {}
 
     # wait for ripple path find
-    if strtobool(os.environ.get("TESTING", "yes")):
+    if strtobool(os.environ.get("TESTING", "no")):
         time.sleep(wait)
 
     for i in xrange(attempts):
-        transaction = tx(tr_hash, timeout=timeout)
+        transaction = tx(tr_hash, timeout=timeout, servers=servers)
         # check if offer happened
         if 'AffectedNodes' in transaction:
             break
@@ -195,16 +205,16 @@ def restore_taker_values(taker):
 
 def sell_all_or_cancel(taker_pays, taker_gets,
                        account, secret,
-                       timeout, fee=10000):
+                       timeout, fee=10000, servers=None):
 
     return create_offer(
         taker_pays, taker_gets, account, secret, timeout, fee,
-        flags=0x00080000 | 0x00020000)
+        flags=0x00080000 | 0x00020000, servers=servers)
 
 
 def create_offer(taker_pays, taker_gets,
                  account, secret,
-                 timeout, fee=10000, flags=0):
+                 timeout, fee=10000, flags=0, servers=None):
     """
     Create trading offer.
 
@@ -219,6 +229,12 @@ def create_offer(taker_pays, taker_gets,
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
+        account    - ripple account
+        secret     - ripple secret
+        timeout    - trade timeout
+        fee        - ripple fee (default: 10000)
+        flags      - trade flags (default: 0)
+        servers    - ripple servers (default: none)
 
     returns:
         offer
@@ -246,4 +262,4 @@ def create_offer(taker_pays, taker_gets,
         }]
     }
     logger.info('Trade offer: %s' % offer)
-    return call_api(offer, timeout=timeout)
+    return call_api(offer, timeout=timeout, servers=servers)
