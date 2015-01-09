@@ -180,10 +180,8 @@ def generate_ripple_transaction_meta(final_balance, previous_balance):
     }
 
 
-class OfferTestCase(TestCase):
+class TradeTestCase(TestCase):
     def setUp(self):
-        super(OfferTestCase, self).setUp()
-
         self.create_data = data
         self.tx_data = tx_data
 

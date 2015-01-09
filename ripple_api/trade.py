@@ -136,7 +136,7 @@ def get_transaction_result(tr_hash, timeout, servers, attempts=5, wait=2):
     transaction = {}
 
     # wait for ripple path find
-    if strtobool(os.environ.get("TESTING", "no")):
+    if not strtobool(os.environ.get("TESTING", "no")):
         time.sleep(wait)
 
     for i in xrange(attempts):
@@ -145,7 +145,8 @@ def get_transaction_result(tr_hash, timeout, servers, attempts=5, wait=2):
         if 'AffectedNodes' in transaction:
             break
         # wait for ripple path find a little more
-        time.sleep(wait)
+        if not strtobool(os.environ.get("TESTING", "no")):
+            time.sleep(wait)
     return transaction
 
 
