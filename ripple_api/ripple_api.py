@@ -554,7 +554,7 @@ def buy_xrp(amount, account, secret):
     logger.info("Trying to sign transaction")
 
     if len(paths['alternatives']) == 0:
-        msg = u'No path alternatives (probably no USD)'
+        msg = u'No path alternatives (probably no USD or no offers)'
         paths['status'] = 'error'
         paths['error_message'] = msg
         logger.error(msg)

@@ -2,6 +2,16 @@
 Changelog
 =========
 
+0.0.24
+======
+
+Changed description of error in `buy_xrp`
+
+0.0.23
+======
+
+Added trade api
+
 0.0.22
 ====
 Added ability to trade USD -> XRP (`buy_xrp`)
