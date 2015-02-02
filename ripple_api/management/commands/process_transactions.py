@@ -79,7 +79,7 @@ class Command(NoArgsCommand):
                 meta = transaction.get('meta', {})
                 if meta.get('TransactionResult') != 'tesSUCCESS':
                     continue
-                amount = meta.get('DeliveredAmount') or tr_tx.get('Amount', {})
+                amount = meta.get('delivered_amount') or tr_tx.get('Amount', {})
 
                 unprocessed_unstored_transactions = (
                     tr_tx['TransactionType'] == 'Payment' and
