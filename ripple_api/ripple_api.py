@@ -537,7 +537,7 @@ def _error(resp):
             'status_msg': resp['error_message']
             }
 
-def buy_xrp(amount, account, secret):
+def buy_xrp(amount, account, secret, servers=None):
     """Trade USD -> XRP.
 
     - amount: amount of XRP to buy in drops (1000000 = 1 XRP)
@@ -563,7 +563,7 @@ def buy_xrp(amount, account, secret):
     result = sign(account, secret, account, amount,
                   send_max=send_max,
                   paths=paths['alternatives'][0]['paths_computed'],
-                  flags=0)
+                  flags=0, servers=servers)
     if result['status'] != 'success':
         logger.error('Failed to sign the transaction')
         return _error(result)
@@ -572,7 +572,7 @@ def buy_xrp(amount, account, secret):
     logger.info("Trying to submit transaction")
 
     blob = result['tx_blob']
-    result = submit(blob)
+    result = submit(blob, servers=servers)
     if result['status'] != 'success':
         return {'status': result['status'],
                 'status_msg': result['error']}
