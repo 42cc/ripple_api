@@ -545,7 +545,8 @@ def buy_xrp(amount, account, secret, servers=None):
     - secret: account's secret
     """
     logger.info("Trying to find paths")
-    paths = path_find(account, account, "%s" % amount, [{"currency": "USD"}])
+    paths = path_find(account, account, "%s" % amount, [{"currency": "USD"}],
+                      servers=servers)
     if paths['status'] != 'success':
         logger.error('Failed to find paths')
         return _error(paths)
