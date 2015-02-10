@@ -46,7 +46,14 @@ def call_api(data, servers=None, server_url=None, api_user=None,
                 }
             ]
         else:
+            from django.core.exceptions import ImproperlyConfigured
+            # we have django in virtual env, but not necessarily 
+            # a settings.RIPPLE_API_DATA
             servers = settings.RIPPLE_API_DATA
+            try:
+                servers = settings.RIPPLE_API_DATA
+            except ImproperlyConfigured:
+                raise ImportError
     except ImportError:
         if servers is None:
             if server_url:
