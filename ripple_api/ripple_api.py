@@ -49,7 +49,6 @@ def call_api(data, servers=None, server_url=None, api_user=None,
             from django.core.exceptions import ImproperlyConfigured
             # we have django in virtual env, but not necessarily 
             # a settings.RIPPLE_API_DATA
-            servers = settings.RIPPLE_API_DATA
             try:
                 servers = settings.RIPPLE_API_DATA
             except ImproperlyConfigured:
