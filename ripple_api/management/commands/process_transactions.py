@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-
-from requests.exceptions import ConnectionError
 import logging
 import datetime
+from requests.exceptions import ConnectionError
 
-#from ...conf import RIPPLE_ACCOUNT, RIPPLE_SECRET
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
 
@@ -47,17 +45,22 @@ class Command(NoArgsCommand):
 
     def monitor_transactions(self):
         """
-        Get new transactions for settings.RIPPLE_ACCOUNT and store them in DB
-
+        Get new transactions for settings.RIPPLE_ACCOUNT and store them in DB.
         """
         start_time = datetime.datetime.now()
-        self.logger.info(self.format_log_message(
-                'Looking for new ripple transactions since last run'))
+        self.logger.info(
+            self.format_log_message(
+                'Looking for new ripple transactions since last run'
+            )
+        )
         ledger_min_index = get_min_ledger_index()
         marker = None
         has_results = True
-        try: timeout = settings.RIPPLE_TIMEOUT
-        except AttributeError: timeout = 5
+
+        try:
+            timeout = settings.RIPPLE_TIMEOUT
+        except AttributeError:
+            timeout = 5
 
         while has_results:
             try:
@@ -88,7 +91,11 @@ class Command(NoArgsCommand):
                     not Transaction.objects.filter(hash=tr_tx['hash'])
                 )
                 if unprocessed_unstored_transactions:
-                        self.logger.info(self.format_log_message('Saving transaction: %s', transaction))
+                        self.logger.info(
+                            self.format_log_message(
+                                'Saving transaction: %s', transaction
+                            )
+                        )
                         destination_tag = tr_tx.get('DestinationTag')
                         source_tag = tr_tx.get('SourceTag')
 
@@ -101,8 +108,11 @@ class Command(NoArgsCommand):
                             currency=amount['currency'],
                             issuer=amount['issuer'], value=amount['value']
                         )
-                        self.logger.info(self.format_log_message(
-                                "Transaction saved: %s", transaction_object))
+                        self.logger.info(
+                            self.format_log_message(
+                                "Transaction saved: %s", transaction_object
+                            )
+                        )
             if (datetime.datetime.now() - start_time
                 >= datetime.timedelta(seconds=270) and has_results):
                 has_results = False
@@ -114,17 +124,32 @@ class Command(NoArgsCommand):
         """
         Check final disposition of transactions.
         """
-        self.logger.info(self.format_log_message('Checking submitted transactions'))
-        for transaction in Transaction.objects.filter(status=Transaction.SUBMITTED):
+        self.logger.info(
+            self.format_log_message(
+                'Checking submitted transactions'
+            )
+        )
+
+        submitted_transactions = Transaction.objects.filter(
+            status=Transaction.SUBMITTED
+        )
+        for transaction in submitted_transactions:
             try:
                 response = tx(transaction.hash)
                 self.logger.info(self.format_log_message(response))
             except RippleApiError as e:
-                self.logger.error(self.format_log_message("Error processing %s: %s", transaction, e))
+                self.logger.error(
+                    self.format_log_message(
+                        "Error processing %s: %s", transaction, e
+                    )
+                )
                 if e.error == 'txnNotFound':
-                    self.logger.info(self.format_log_message(
-                        'Setting transaction status to Failed for %s', transaction
-                    ))
+                    self.logger.info(
+                        self.format_log_message(
+                            'Setting transaction status to Failed for %s',
+                            transaction
+                        )
+                    )
                     transaction.status = Transaction.FAILURE
                     transaction.save()
                 continue
@@ -140,7 +165,8 @@ class Command(NoArgsCommand):
                     transaction.parent.save()
 
                 self.logger.info(self.format_log_message(
-                    "Transaction: %s to %s was complete.", transaction, transaction.destination
+                        "Transaction: %s to %s was complete.",
+                        transaction, transaction.destination
                     )
                 )
             else:
@@ -148,10 +174,14 @@ class Command(NoArgsCommand):
 
     def submit_pending_transactions(self):
         """
-        Submit transactions that was signed, but connection error occurred when submit it.
+        Submit transactions that was signed, but connection error occurred
+        when submit it.
         """
         self.logger.info(self.format_log_message('Submit pending transactions'))
-        for transaction in Transaction.objects.filter(status=Transaction.PENDING):
+        pending_transactions = Transaction.objects.filter(
+            status=Transaction.PENDING
+        )
+        for transaction in pending_transactions:
             self.logger.info(self.format_log_message('Submit: %s', transaction))
             submit_task.apply((transaction,))
 
@@ -172,12 +202,16 @@ class Command(NoArgsCommand):
             sign_task.apply((ret_transaction, settings.RIPPLE_SECRET))
             transaction.status = Transaction.RETURNING
             transaction.save()
-            self.logger.info("New transaction created for returning %s", ret_transaction.pk)
+            self.logger.info(
+                "New transaction created for returning %s", ret_transaction.pk
+            )
 
     def retry_failed_transactions(self):
         self.logger.info('Retrying failed transactions')
-        for transaction in Transaction.objects.filter(
-                status=Transaction.FAILURE):
+        failed_transactions = Transaction.objects.filter(
+            status=Transaction.FAILURE
+        )
+        for transaction in failed_transactions:
             self.logger.info(self.format_log_message('Found %s', transaction))
 
             retry_transaction = Transaction.objects.create(
@@ -189,7 +223,10 @@ class Command(NoArgsCommand):
                 parent=transaction.parent
             )
             sign_task.apply((retry_transaction, settings.RIPPLE_SECRET))
-            self.logger.info("New transaction created for returning %s", retry_transaction.pk)
+            self.logger.info(
+                "New transaction created for returning %s",
+                retry_transaction.pk
+            )
             transaction.status = Transaction.FAIL_FIXED
             transaction.save()
             self.logger.info("Fixed the transaction")
