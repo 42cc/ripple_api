@@ -2,9 +2,13 @@
 Changelog
 =========
 
-0.0.30
+0.0.31
 ======
 Transaction monitor to support `account` param.
+
+0.0.30
+======
+Minor PEP8 fixes
 
 0.0.24
 ======
