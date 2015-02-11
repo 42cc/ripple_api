@@ -185,6 +185,7 @@ def generate_ripple_transaction_meta(final_balance, previous_balance):
 
 # FIXME: disable tests for now as these are not consistent with
 # the implementation at all
+# https://github.com/42cc/ripple_api/issues/24
 @unittest.skip
 class TradeTestCase(TestCase):
     def setUp(self):
