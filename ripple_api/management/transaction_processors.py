@@ -3,12 +3,14 @@ import datetime
 import logging
 from requests.exceptions import ConnectionError
 
-from django.conf import settings
-
 from ripple_api.models import Transaction
 from ripple_api.ripple_api import account_tx, RippleApiError
 
+from django.conf import settings
+from django.db.models import Max
 
+
+PROCESS_TRANSACTIONS_LIMIT = 200
 PROCESS_TRANSACTIONS_TIMEOUT = 270
 
 logger = logging.getLogger('ripple')
@@ -20,15 +22,15 @@ def _get_min_ledger_index(account):
     Gets min leger index for transactions of `account` stored
     in database.
     """
-    transactions = Transaction.objects.filter(
-        account=account,
+    min_ledger_index = Transaction.objects.filter(
+        destination=account,
         status__in=[
             Transaction.RECEIVED, Transaction.PROCESSED,
             Transaction.MUST_BE_RETURN, Transaction.RETURNING,
             Transaction.RETURNED
         ]
-    ).order_by('-pk')
-    return transactions[0].ledger_index if transactions else -1
+    ).aggregate(Max('ledger_index'))
+    return min_ledger_index['ledger_index__max'] or -1
 
 
 def _store_transaction(account, transaction):
@@ -111,7 +113,7 @@ def monitor_transactions(account):
         try:
             response = account_tx(account,
                                   ledger_min_index,
-                                  limit=200,
+                                  limit=PROCESS_TRANSACTIONS_LIMIT,
                                   marker=marker,
                                   timeout=timeout)
         except (RippleApiError, ConnectionError), e:

@@ -6,6 +6,6 @@ from .models import Transaction
 
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('created', 'account', 'destination',
-                    'currency', 'value', 'status')
+                    'currency', 'value', 'ledger_index', 'status')
 
 admin.site.register(Transaction, TransactionAdmin)
