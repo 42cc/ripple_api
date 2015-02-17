@@ -22,19 +22,34 @@ ENGINE_SUCCESS = 'tesSUCCESS'
 # Authorize the other party to hold issuances from this
 # account. (No effect unless using the asfRequireAuth
 # AccountSet flag.) Cannot be unset.
+#
+# For details see:
+# https://ripple.com/build/transactions/#accountset-flags
 SET_AUTH = 0x00010000        # 65536
 
 # Blocks rippling between two trustlines of the same currency,
 # if this flag is set on both. (See No Ripple for details.)
+#
+# For details see:
+# https://ripple.com/knowledge_center/understanding-the-noripple-flag/
 SET_NORIPPLE = 0x00020000    # 131072
 
 # Clears the No-Rippling flag. (See No Ripple for details.)
+#
+# For details see:
+# https://ripple.com/knowledge_center/understanding-the-noripple-flag/
 CLEAR_NORIPPLE = 0x00040000   # 262144
 
 # Freeze the trustline.
+#
+# For details see:
+# https://wiki.ripple.com/Freeze
 SET_FREEZE = 0x00100000      # 1048576
 
 # Unfreeze the trustline
+#
+# For details see:
+# https://wiki.ripple.com/Freeze
 CLEAR_FREEZE = 0x00200000    # 2097152
 '''
     end of Trust lines flags definition
