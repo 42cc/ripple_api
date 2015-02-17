@@ -589,3 +589,102 @@ def buy_xrp(amount, account, secret, servers=None):
     return {'status': 'success',
             'bought': amount,
             'sold': send_max['value']}
+
+
+def trust_set(account, secret, destination, amount, currency,
+              flags=0x00040000, destination_tag=None,
+              servers=None, server_url=None, api_user=None, api_password=None,
+              timeout=5, fee=10000):
+    """
+        Creates, updates or deletes trust line from account to destination
+        with amount of currency
+
+        Documentation:
+        https://ripple.com/build/transactions/#trustset
+
+        takes:
+
+            account -- id of the ripple account trusts
+
+            secret -- the secret of account trusts
+
+            destination -- id of the ripple account must be trust to
+
+            amount -- amount of trust limit. if Amount is 0 trust line will
+                      be deleted from account to destination
+
+            currency -- currency of trust line
+
+            fee -- (optional) XRP drops of ripple fee. Default = 10000 drops
+
+            flags -- (optional) integer or dictionary - {
+                "Auth":
+                    True, # tfSetAuth - equals to increase flags by 0x00010000
+                "AllowRipple":
+                    False, # tfSetNoRipple - equals to increase flags by
+                           # 0x00020000
+                    True, # tfClearNoRipple - equals to increase
+                          # flags by 0x00040000
+                "Freeze":
+                    True, # tfSetFreeze - equals to increase flags
+                          # by 0x00100000
+                    False, # tfClearFreeze - equals to increase flags
+                           # by 0x00200000
+            }. Default equals to { "AllowRipple": False }
+
+            destination_tag -- (optional) the tag to explain the transaction
+
+            servers -- (optional) the list of servers to be called to submit
+                       transaction
+
+        returns: result field form json-response of rippled server
+
+    """
+    if isinstance(flags, dict):
+        flags = (
+            # tfSetAuth
+            (0x00010000 if flags.get("Auth", False) else 0) +
+
+            # tfSetNoRipple
+            (0x00020000 if not flags.get("AllowRipple", False) else 0) +
+
+            # tfClearNoRipple
+            (0x00040000 if flags.get("AllowRipple", False) else 0) +
+
+            # tfSetFreeze
+            (0x00100000 if flags.get("Freeze", None) else 0) +
+
+            # tfClearFreeze
+            (0x00200000 if not flags.get("Freeze", True) else 0)
+        )
+
+    trustset = {
+        "method": "submit",
+        "params": [{
+            "secret": secret,
+            "tx_json": {
+                "TransactionType": "TrustSet",
+                "Fee": str(fee),
+                "Flags": flags,
+                "Account": account,
+                "LimitAmount": {
+                    "currency": currency,
+                    "issuer": destination,
+                    "value": "%.2f" % amount
+                }
+            },
+        }]
+    }
+
+    logger.info("Trying to submit TrustSet")
+
+    result = call_api(trustset,
+                      servers=servers, server_url=server_url,
+                      api_user=api_user, api_password=api_password,
+                      timeout=timeout
+                      )
+
+    if result['status'] == 'success':
+        logger.info("TrustSet was successfully submitted")
+
+    return result
