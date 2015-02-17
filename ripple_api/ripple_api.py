@@ -51,6 +51,9 @@ SET_FREEZE = 0x00100000      # tfSetFreeze = 1048576
 # For details see:
 # https://wiki.ripple.com/Freeze
 CLEAR_FREEZE = 0x00200000    # tfClearFreeze = 2097152
+
+# No flags set
+NO_FLAGS = 0x0000000
 '''
     end of Trust lines flags definition
 '''
@@ -632,7 +635,7 @@ def buy_xrp(amount, account, secret, servers=None):
 
 
 def trust_set(account, secret, destination, amount, currency,
-              flags=CLEAR_NORIPPLE, destination_tag=None,
+              flags=NO_FLAGS, destination_tag=None,
               servers=None, server_url=None, api_user=None, api_password=None,
               timeout=5, fee=10000):
     """
@@ -670,7 +673,7 @@ def trust_set(account, secret, destination, amount, currency,
                           # by SET_FREEZE
                     False, # tfClearFreeze - equals to increase flags
                            # by CLEAR_FREEZE
-            }. Default equals to { "AllowRipple": True }
+            }. Default equals to { } (empty dictionary)
 
             destination_tag -- (optional) the tag to explain the transaction
 
@@ -685,11 +688,11 @@ def trust_set(account, secret, destination, amount, currency,
             # tfSetAuth
             (SET_AUTH if flags.get("Auth", False) else 0) +
 
-            # tfSetNoRipple
-            (SET_NORIPPLE if not flags.get("AllowRipple", False) else 0) +
-
             # tfClearNoRipple
-            (CLEAR_NORIPPLE if flags.get("AllowRipple", False) else 0) +
+            (CLEAR_NORIPPLE if flags.get("AllowRipple", None) else 0) +
+
+            # tfSetNoRipple
+            (SET_NORIPPLE if not flags.get("AllowRipple", True) else 0) +
 
             # tfSetFreeze
             (SET_FREEZE if flags.get("Freeze", None) else 0) +
