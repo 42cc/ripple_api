@@ -15,6 +15,31 @@ logger = logging.getLogger(__name__)
 
 ENGINE_SUCCESS = 'tesSUCCESS'
 
+'''
+   Trust lines flags definition
+   Docs: https://ripple.com/build/transactions/#trustset
+'''
+# Authorize the other party to hold issuances from this
+# account. (No effect unless using the asfRequireAuth
+# AccountSet flag.) Cannot be unset.
+SET_AUTH = 0x00010000        # 65536
+
+# Blocks rippling between two trustlines of the same currency,
+# if this flag is set on both. (See No Ripple for details.)
+SET_NORIPPLE = 0x00020000    # 131072
+
+# Clears the No-Rippling flag. (See No Ripple for details.)
+CLEAR_NORIPPLE = 0x00040000   # 262144
+
+# Freeze the trustline.
+SET_FREEZE = 0x00100000      # 1048576
+
+# Unfreeze the trustline
+CLEAR_FREEZE = 0x00200000    # 2097152
+'''
+    end of Trust lines flags definition
+'''
+
 
 class RippleApiError(Exception):
 
@@ -592,7 +617,7 @@ def buy_xrp(amount, account, secret, servers=None):
 
 
 def trust_set(account, secret, destination, amount, currency,
-              flags=0x00040000, destination_tag=None,
+              flags=SET_NORIPPLE, destination_tag=None,
               servers=None, server_url=None, api_user=None, api_password=None,
               timeout=5, fee=10000):
     """
@@ -619,17 +644,17 @@ def trust_set(account, secret, destination, amount, currency,
 
             flags -- (optional) integer or dictionary - {
                 "Auth":
-                    True, # tfSetAuth - equals to increase flags by 0x00010000
+                    True, # tfSetAuth - equals to increase flags by SET_AUTH
                 "AllowRipple":
-                    False, # tfSetNoRipple - equals to increase flags by
-                           # 0x00020000
+                    False, # tfSetNoRipple - equals to increase flags
+                           # by SET_NORIPPLE
                     True, # tfClearNoRipple - equals to increase
-                          # flags by 0x00040000
+                          # flags by CLEAR_NORIPPLE
                 "Freeze":
                     True, # tfSetFreeze - equals to increase flags
-                          # by 0x00100000
+                          # by SET_FREEZE
                     False, # tfClearFreeze - equals to increase flags
-                           # by 0x00200000
+                           # by CLEAR_FREEZE
             }. Default equals to { "AllowRipple": False }
 
             destination_tag -- (optional) the tag to explain the transaction
@@ -643,19 +668,19 @@ def trust_set(account, secret, destination, amount, currency,
     if isinstance(flags, dict):
         flags = (
             # tfSetAuth
-            (0x00010000 if flags.get("Auth", False) else 0) +
+            (SET_AUTH if flags.get("Auth", False) else 0) +
 
             # tfSetNoRipple
-            (0x00020000 if not flags.get("AllowRipple", False) else 0) +
+            (SET_NORIPPLE if not flags.get("AllowRipple", False) else 0) +
 
             # tfClearNoRipple
-            (0x00040000 if flags.get("AllowRipple", False) else 0) +
+            (CLEAR_NORIPPLE if flags.get("AllowRipple", False) else 0) +
 
             # tfSetFreeze
-            (0x00100000 if flags.get("Freeze", None) else 0) +
+            (SET_FREEZE if flags.get("Freeze", None) else 0) +
 
             # tfClearFreeze
-            (0x00200000 if not flags.get("Freeze", True) else 0)
+            (CLEAR_FREEZE if not flags.get("Freeze", True) else 0)
         )
 
     trustset = {
