@@ -11,6 +11,8 @@ Settings
 * ``RIPPLE_API_DATA[0]['RIPPLE_API_USER']``
 * ``RIPPLE_API_DATA[0]['RIPPLE_API_PASSWORD']``
 * ``RIPPLE_TIMEOUT`` - timeout for django manamgement command calls
+* ``RIPPLE_TRANSACTION_MONITOR_MIN_LEDGER_INDEX`` - offset, ledger index to start transaction monitoring with,
+default is the beginning of time
 
 Example Config::
 
