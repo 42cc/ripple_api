@@ -25,32 +25,32 @@ ENGINE_SUCCESS = 'tesSUCCESS'
 #
 # For details see:
 # https://ripple.com/build/transactions/#accountset-flags
-SET_AUTH = 0x00010000        # 65536
+SET_AUTH = 0x00010000        # tfSetAuth = 65536
 
 # Blocks rippling between two trustlines of the same currency,
 # if this flag is set on both. (See No Ripple for details.)
 #
 # For details see:
 # https://ripple.com/knowledge_center/understanding-the-noripple-flag/
-SET_NORIPPLE = 0x00020000    # 131072
+SET_NORIPPLE = 0x00020000    # tfSetNoRipple = 131072
 
 # Clears the No-Rippling flag. (See No Ripple for details.)
 #
 # For details see:
 # https://ripple.com/knowledge_center/understanding-the-noripple-flag/
-CLEAR_NORIPPLE = 0x00040000   # 262144
+CLEAR_NORIPPLE = 0x00040000   # tfClearNoRipple = 262144
 
 # Freeze the trustline.
 #
 # For details see:
 # https://wiki.ripple.com/Freeze
-SET_FREEZE = 0x00100000      # 1048576
+SET_FREEZE = 0x00100000      # tfSetFreeze = 1048576
 
 # Unfreeze the trustline
 #
 # For details see:
 # https://wiki.ripple.com/Freeze
-CLEAR_FREEZE = 0x00200000    # 2097152
+CLEAR_FREEZE = 0x00200000    # tfClearFreeze = 2097152
 '''
     end of Trust lines flags definition
 '''
@@ -632,7 +632,7 @@ def buy_xrp(amount, account, secret, servers=None):
 
 
 def trust_set(account, secret, destination, amount, currency,
-              flags=SET_NORIPPLE, destination_tag=None,
+              flags=CLEAR_NORIPPLE, destination_tag=None,
               servers=None, server_url=None, api_user=None, api_password=None,
               timeout=5, fee=10000):
     """
@@ -670,7 +670,7 @@ def trust_set(account, secret, destination, amount, currency,
                           # by SET_FREEZE
                     False, # tfClearFreeze - equals to increase flags
                            # by CLEAR_FREEZE
-            }. Default equals to { "AllowRipple": False }
+            }. Default equals to { "AllowRipple": True }
 
             destination_tag -- (optional) the tag to explain the transaction
 
