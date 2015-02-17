@@ -12,6 +12,9 @@ from django.db.models import Max
 
 PROCESS_TRANSACTIONS_LIMIT = 200
 PROCESS_TRANSACTIONS_TIMEOUT = 270
+DEFAULT_MIN_LEDGER_INDEX = getattr(
+    settings, 'RIPPLE_TRANSACTION_MONITOR_MIN_LEDGER_INDEX', -1
+)
 
 logger = logging.getLogger('ripple')
 logger.setLevel(logging.ERROR)
@@ -30,7 +33,9 @@ def _get_min_ledger_index(account):
             Transaction.RETURNED
         ]
     ).aggregate(Max('ledger_index'))
-    return min_ledger_index['ledger_index__max'] or -1
+    min_ledger_index = min_ledger_index['ledger_index__max'] or -1
+
+    return max(min_ledger_index, DEFAULT_MIN_LEDGER_INDEX)
 
 
 def _store_transaction(account, transaction):

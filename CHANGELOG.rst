@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.32
+======
+Offset option `RIPPLE_TRANSACTION_MONITOR_MIN_LEDGER_INDEX` for transaction monitor.
+
 0.0.31
 ======
 Transaction monitor to support `account` param.
