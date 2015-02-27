@@ -4,7 +4,7 @@
 import json
 import logging
 import socket
-from decimal import Decimal
+from decimal import Decimal, getcontext
 import ssl
 
 # thirdparty imports:
@@ -151,6 +151,33 @@ def call_api(data, servers=None, server_url=None, api_user=None,
         raise RippleApiError('Timeout', '', 'rippled timed out')
 
     raise error
+
+
+def account_info(account, servers=None, server_url=None, api_user=None,
+                 api_password=None, timeout=5):
+    """ Fetches from rippled Information about account
+
+        params:
+            account -- ripple-address of account to be detailed
+            servers, server_url, api_user, api_password, time -- see call_api
+        returns:
+            dictionary with account info. See:
+            https://ripple.com/build/rippled-apis/#account-info
+    """
+
+    request = {
+        "method": "account_info",
+        "params": [
+            {
+                "account": account,
+                "strict": True,
+                "ledger_index": "validated"
+            }
+        ]
+    }
+
+    return call_api(request, servers=None, server_url=None, api_user=None,
+                    api_password=None, timeout=5)
 
 
 def account_tx(
@@ -337,6 +364,12 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
 
 def balance(account, issuers, currency, servers=None, server_url=None,
             api_user=None, api_password=None, timeout=5):
+
+    if currency == "XRP":
+        info = account_info(account)
+        getcontext().prec = 6
+        return Decimal(info["account_data"]["balance"]) / Decimal(1e6)
+
     results = call_api({'method': 'account_lines',
                         'params': [{'account': account}]
                         },
