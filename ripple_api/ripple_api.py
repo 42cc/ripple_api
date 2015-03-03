@@ -458,13 +458,13 @@ def create_offer(taker_pays, taker_gets,
     taker - user, that accepts your offer
     takes:
         taker_pays -  {
-            'amount':   - float - amount to buy
+            'value':   - float - amount to buy
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
         or Decimal(amount) if currency is XRP
         taker_gets -  {
-            'amount':   - float - amount to sell
+            'value':   - float - amount to sell
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
@@ -472,11 +472,11 @@ def create_offer(taker_pays, taker_gets,
     """
 
     if isinstance(taker_pays, dict):
-        taker_pays['amount'] = "%.12f" % taker_pays['amount']
+        taker_pays['value'] = "%.12f" % taker_pays['value']
     else:
         taker_pays = "%.12f" % taker_pays
     if isinstance(taker_gets, dict):
-        taker_gets['amount'] = "%.12f" % taker_gets['amount']
+        taker_gets['value'] = "%.12f" % taker_gets['value']
     else:
         taker_gets = "%.12f" % taker_gets
     offer = {
