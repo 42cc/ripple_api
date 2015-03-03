@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.34
+======
+Changed "amount" to "value" in `create_offer`, according to https://ripple.com/build/transactions/#offercreate
+
 0.0.32
 ======
 Offset option `RIPPLE_TRANSACTION_MONITOR_MIN_LEDGER_INDEX` for transaction monitor.
