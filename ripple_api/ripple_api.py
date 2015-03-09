@@ -153,6 +153,25 @@ def call_api(data, servers=None, server_url=None, api_user=None,
     raise error
 
 
+def account_info(account, servers=None, server_url=None, api_user=None,
+                 api_password=None, timeout=5):
+
+    request = {
+        "method": "account_info",
+        "params": [
+            {
+                "account": account,
+                "strict": True,
+                "ledger_index": "validated"
+            }
+        ]
+    }
+
+    return call_api(request, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
+                    timeout=timeout)
+
+
 def account_tx(
         account, ledger_index_min=-1, ledger_index_max=-1, binary=False,
         forward=False, limit=None, marker=None,
@@ -337,6 +356,13 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
 
 def balance(account, issuers, currency, servers=None, server_url=None,
             api_user=None, api_password=None, timeout=5):
+
+    if currency == "XRP":
+        info = account_info(account, servers=servers, server_url=server_url,
+                            api_user=api_user, api_password=api_password,
+                            timeout=timeout)
+        return Decimal(info["account_data"]["Balance"]) / Decimal(1e6)
+
     results = call_api({'method': 'account_lines',
                         'params': [{'account': account}]
                         },
