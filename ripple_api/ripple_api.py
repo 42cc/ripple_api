@@ -380,7 +380,9 @@ def balance(account, issuers, currency, servers=None, server_url=None,
     return total
 
 
-def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
+def is_trust_set(trusts, peer, currency='', limit=0,
+                 servers=None, server_url=None, api_user=None,
+                 api_password=None, timeout=5):
     """
     checks if 'trusts' trusts 'peer' with specified currency and limit
 
@@ -391,7 +393,7 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
         `peer`:
             ripple_address, that is trusted by  by 'trusts'
         `currency` (optional):
-            currency in which trust should be set
+            currency in which trust should be verified
         `limit` (optional):
             minimal amount of trust
 
@@ -408,6 +410,8 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
                 'peer': peer
             }]
         },
+        servers=servers, server_url=server_url,
+        api_user=api_user, api_password=api_password,
         timeout=timeout,
     )
 
