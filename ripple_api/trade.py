@@ -8,7 +8,7 @@ from distutils.util import strtobool
 
 from ripple_api import call_api, tx
 
-logger = logging.getLogger('ripple_trade')
+logger = logging.getLogger(__name__)
 
 
 def sell_all(buy_expected, sell_needed,
