@@ -260,7 +260,7 @@ def path_find(account, destination, amount, source_currencies=None, servers=None
                 }]
         }
     if source_currencies:
-       data['params']['source_currencies'] = source_currencies
+       data['params'][0]['source_currencies'] = source_currencies
     return call_api(data, servers=servers, server_url=server_url,
                     api_user=api_user, api_password=api_password,
                     timeout=timeout)
