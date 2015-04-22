@@ -41,7 +41,7 @@ SET_NORIPPLE = 0x00020000    # tfSetNoRipple = 131072
 CLEAR_NORIPPLE = 0x00040000   # tfClearNoRipple = 262144
 
 # Freeze the trustline.
-#
+#
 # For details see:
 # https://wiki.ripple.com/Freeze
 SET_FREEZE = 0x00100000      # tfSetFreeze = 1048576
@@ -233,7 +233,7 @@ def tx(transaction_id, servers=None, server_url=None, api_user=None,
                     timeout=timeout)
 
 
-def path_find(account, destination, amount, source_currencies, servers=None,
+def path_find(account, destination, amount, source_currencies=None, servers=None,
               server_url=None, api_user=None, api_password=None, timeout=5):
     '''
     Before sending IOU you need to find paths to the destination account
@@ -257,9 +257,10 @@ def path_find(account, destination, amount, source_currencies, servers=None,
                 'source_account': account,
                 'destination_account': destination,
                 'destination_amount': amount,
-                'source_currencies': source_currencies,
                 }]
         }
+    if source_currencies:
+       data['params']['source_currencies'] = source_currencies
     return call_api(data, servers=servers, server_url=server_url,
                     api_user=api_user, api_password=api_password,
                     timeout=timeout)
