@@ -776,8 +776,9 @@ def simple_trade(account, secret, currency_from, currency_to, amount):
 
     Both currency params are dicts with currency & issuer key.
     """
+    amount = "%.12f" % amount
     rate = convert(
-        str(amount),
+        amount,
         currency_from['currency'],
         currency_from['issuer'],
         currency_to['currency'],

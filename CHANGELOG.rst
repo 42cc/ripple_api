@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.0.40
+======
+
+- handle input better in `simple_trade`
+
+
 0.0.39
 ======
 
