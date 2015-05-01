@@ -90,7 +90,7 @@ def call_api(data, servers=None, server_url=None, api_user=None,
             ]
         else:
             from django.core.exceptions import ImproperlyConfigured
-            # we have django in virtual env, but not necessarily 
+            # we have django in virtual env, but not necessarily
             # a settings.RIPPLE_API_DATA
             try:
                 servers = settings.RIPPLE_API_DATA
@@ -613,9 +613,8 @@ def extract_value(taker_pays_or_gets):
 
 
 def _error(resp):
-    return {'status': resp['status'],
-            'status_msg': resp['error_message']
-            }
+    return {'status': resp.get('status'),
+            'status_msg': resp.get('error_message')}
 
 def buy_xrp(amount, account, secret, servers=None):
     """Trade USD -> XRP.
@@ -762,3 +761,71 @@ def trust_set(account, secret, destination, amount, currency,
         logger.info("TrustSet was successfully submitted")
 
     return result
+
+
+def simple_trade(account, secret, currency_from, currency_to, amount):
+    """
+    Exchange currencies. Uses method similar to what ripple client does in
+    'Trade -> Simple' mode.
+
+    :param account: account for which exchange happens
+    :param secret: account's secret
+    :param currency_from: currency to sell
+    :param currency_to: currency to buy
+    :param amount: amount to sell. Exchange rate determined automatically
+
+    Both currency params are dicts with currency & issuer key.
+    """
+    rate = convert(
+        str(amount),
+        currency_from['currency'],
+        currency_from['issuer'],
+        currency_to['currency'],
+        currency_to['issuer'],
+        sell=True,
+    )
+    if rate['status'] != 'success':
+        logger.error('Failed to determine exchange rate')
+        return _error(rate)
+
+    value = "%.12f" % rate['amount_to']
+    to_buy = dict(value=value, **currency_to)
+    paths = path_find(
+        account,
+        account,
+        to_buy,
+        [currency_from],
+    )
+    if paths['status'] != 'success':
+        logger.error('Failed to find paths')
+        return _error(paths)
+    if len(paths['alternatives']) == 0:
+        msg = u'No path alternatives (probably no USD or no offers)'
+        paths['status'] = 'error'
+        paths['error_message'] = msg
+        logger.error(msg)
+        return _error(paths)
+
+    send_max = paths['alternatives'][0]['source_amount']
+    result = sign(
+        account,
+        secret,
+        account,
+        to_buy,
+        send_max=send_max,
+        paths=paths['alternatives'][0]['paths_computed'],
+    )
+    if result['status'] != 'success':
+        logger.error('Failed to sign the transaction')
+        return _error(result)
+
+    blob = result['tx_blob']
+    result = submit(blob, fail_hard=True)
+    ok = (result['status'] == 'success'
+          and result.get('engine_result') == ENGINE_SUCCESS)
+    if ok:
+        return {'status': 'success',
+                'bought': to_buy,
+                'sold': send_max}
+    return {'status': result['status'],
+            'status_msg': result.get('error')}

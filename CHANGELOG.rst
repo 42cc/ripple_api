@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.0.39
+======
+
+- add `simple_trade` function for currency exchange. Uses method similar to
+  what ripple client does in 'Trade -> Simple' mode.
+
 0.0.34
 ======
 Changed "amount" to "value" in `create_offer`, according to https://ripple.com/build/transactions/#offercreate
