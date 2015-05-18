@@ -383,7 +383,7 @@ def balance(account, issuers, currency, servers=None, server_url=None,
 
 def is_trust_set(trusts, peer, currency='', limit=0,
                  servers=None, server_url=None, api_user=None,
-                 api_password=None, timeout=5, servers=None):
+                 api_password=None, timeout=5):
     """
     checks if 'trusts' trusts 'peer' with specified currency and limit
 
