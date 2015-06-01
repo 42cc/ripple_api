@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from decimal import Decimal
+import copy
 import time
 import logging
 import os
@@ -262,5 +263,9 @@ def create_offer(taker_pays, taker_gets,
             },
         }]
     }
-    logger.info('Trade offer: %s' % offer)
+
+    # make offer copy and remove secret
+    log_offer = copy.deepcopy(offer)
+    log_offer['params'][0].pop('secret', None)
+    logger.info('Trade offer: %s' % log_offer)
     return call_api(offer, timeout=timeout, servers=servers)
