@@ -251,7 +251,6 @@ def create_offer(taker_pays, taker_gets,
     offer = {
         "method": "submit",
         "params": [{
-            "secret": secret,
             "tx_json": {
                 "TransactionType": "OfferCreate",
                 "Fee": str(fee),
