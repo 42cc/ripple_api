@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.0.44
+======
+
+- Change error message in `buy_xrp`
+
+
 0.0.40
 ======
 
