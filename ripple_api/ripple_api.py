@@ -828,5 +828,6 @@ def simple_trade(account, secret, currency_from, currency_to, amount):
         return {'status': 'success',
                 'bought': to_buy,
                 'sold': send_max}
-    return {'status': result['status'],
+    status = (result['status'], result.get('engine_result'))
+    return {'status': '%s: %s' % status,
             'status_msg': result.get('error')}
