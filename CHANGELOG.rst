@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.0.45
+======
+
+- Fix returned status for `simple_trade`
+
 0.0.44
 ======
 
