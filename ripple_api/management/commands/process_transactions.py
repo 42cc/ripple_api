@@ -92,7 +92,7 @@ class Command(NoArgsCommand):
         )
         for transaction in pending_transactions:
             logger.info(format_log_message('Submit: %s', transaction))
-            submit_task.apply((transaction,))
+            submit_task.apply((transaction.pk,))
 
     def return_funds(self):
         logger.info('Returning failed stakes')
@@ -108,7 +108,7 @@ class Command(NoArgsCommand):
                 status=Transaction.PENDING,
                 parent=transaction
             )
-            sign_task.apply((ret_transaction, settings.RIPPLE_SECRET))
+            sign_task.apply((ret_transaction.pk, settings.RIPPLE_SECRET))
             transaction.status = Transaction.RETURNING
             transaction.save()
             logger.info(
@@ -131,7 +131,7 @@ class Command(NoArgsCommand):
                 status=Transaction.PENDING,
                 parent=transaction.parent
             )
-            sign_task.apply((retry_transaction, settings.RIPPLE_SECRET))
+            sign_task.apply((retry_transaction.pk, settings.RIPPLE_SECRET))
             logger.info(
                 "New transaction created for returning %s",
                 retry_transaction.pk

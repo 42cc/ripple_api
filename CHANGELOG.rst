@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.0.46
+====
+- Fix celery tasks (use transaction.pk instead of transaction object)
+
 0.0.45
 ======
 
