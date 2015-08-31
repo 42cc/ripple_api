@@ -9,8 +9,13 @@ from ripple_api import RippleApiError, path_find, sign, submit, tx
 
 
 @task
-def sign_task(transaction, secret):
+def sign_task(transaction_pk, secret):
     logger = logging.getLogger('ripple')
+
+    transaction = Transaction.objects.filter(pk=transaction_pk).first()
+    if not transaction:
+        logger.error("sign_task: transaction %s not found in DB!" % transaction_pk)
+        return
 
     try:
         if transaction.currency == 'XRP':
@@ -50,40 +55,45 @@ def sign_task(transaction, secret):
     transaction.save()
 
     logger.info('Transaction signed: %s' % transaction)
-    return transaction
+    return transaction.pk
 
 
 @task
-def submit_task(transaction):
-    if transaction:
-        logger = logging.getLogger('ripple')
-        try:
-            response = submit(transaction.tx_blob)
-            if response['engine_result'] == "telINSUF_FEE_P":
-                # ripple server too busy to forward or process your transaction
-                while True:
-                    time.sleep(2)
-                    tx_response = tx(transaction.hash)
-                    status = tx_response.get('meta', {}).get('TransactionResult')
-                    # check if tx status is available
-                    if status:
-                        response['engine_result'] = status
-                        break
+def submit_task(transaction_pk):
+    if not transaction_pk:
+        return
+    transaction = Transaction.objects.filter(pk=transaction_pk).first()
+    logger = logging.getLogger('ripple')
+    if not transaction:
+        logger.error("sign_task: transaction %s not found in DB!" % transaction_pk)
+        return
+    try:
+        response = submit(transaction.tx_blob)
+        if response['engine_result'] == "telINSUF_FEE_P":
+            # ripple server too busy to forward or process your transaction
+            while True:
+                time.sleep(2)
+                tx_response = tx(transaction.hash)
+                status = tx_response.get('meta', {}).get('TransactionResult')
+                # check if tx status is available
+                if status:
+                    response['engine_result'] = status
+                    break
 
-        except RippleApiError, e:
-            logger.error(e)
-            transaction.status = Transaction.FAILURE
-            transaction.save()
-            return
-        except ConnectionError, e:
-            logger.error('Connection error: %s' % e)
-            return
+    except RippleApiError, e:
+        logger.error(e)
+        transaction.status = Transaction.FAILURE
+        transaction.save()
+        return
+    except ConnectionError, e:
+        logger.error('Connection error: %s' % e)
+        return
 
-        if response['engine_result'] in ["tesSUCCESS",  "tefPAST_SEQ"]:
-            transaction.status = Transaction.SUBMITTED
-            transaction.save()
-            logger.info("Transaction: %s successful submitted." % transaction)
-        else:
-            transaction.status = Transaction.FAILURE
-            transaction.save()
-            logger.info("Transaction: %s submitted with result %s" % (transaction, response['engine_result']))
+    if response['engine_result'] in ["tesSUCCESS",  "tefPAST_SEQ"]:
+        transaction.status = Transaction.SUBMITTED
+        transaction.save()
+        logger.info("Transaction: %s successful submitted." % transaction)
+    else:
+        transaction.status = Transaction.FAILURE
+        transaction.save()
+        logger.info("Transaction: %s submitted with result %s" % (transaction, response['engine_result']))

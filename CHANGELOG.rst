@@ -2,6 +2,14 @@
 Changelog
 =========
 
+0.0.24
+====
+Fix celery tasks
+
+0.0.23
+====
+Added trading api from coinhand
+
 0.0.22
 ====
 Added ability to trade USD -> XRP (`buy_xrp`)
