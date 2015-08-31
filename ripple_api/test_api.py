@@ -10,6 +10,7 @@ import ssl
 
 from .models import Transaction
 from .management.commands.process_transactions import Command
+from .management.transaction_processors import monitor_transactions
 from .signals import transaction_status_changed
 from ripple_api import call_api, RippleApiError
 
@@ -28,7 +29,7 @@ class TestRipple(TestCase):
 
         receivers = post_save.receivers
         post_save.receivers = []
-        Command().monitor_transactions()
+        monitor_transactions(settings.RIPPLE_ACCOUNT)
         post_save.receivers = receivers
 
         self.assertEqual(Transaction.objects.count(), 1)

@@ -51,19 +51,27 @@ class Transaction(models.Model):
     ledger_index = models.IntegerField(null=True, blank=True)
     status = models.SmallIntegerField(choices=STATUS_CHOICES, default=RECEIVED)
 
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='returning_transaction')
+    parent = models.ForeignKey('self', null=True, blank=True,
+                               related_name='returning_transaction')
     created = models.DateTimeField(auto_now_add=True)
 
     status_tracker = ModelTracker(fields=['status'])
 
     def __unicode__(self):
-        return u'[%s] %s. %s %s from %s to %s' % (self.pk, self.created, self.value, self.currency, self.account, self.destination)
+        return u'[%s] %s. %s %s from %s to %s' % (
+            self.pk, self.created, self.value,
+            self.currency, self.account, self.destination
+        )
 
     def save(self, *args, **kwargs):
         created = bool(self.pk)
         super(Transaction, self).save(*args, **kwargs)
 
         if created and self.status_tracker.previous('status') is not None:
-            transaction_status_changed.send(sender=self.__class__, instance=self, old_status=self.status_tracker.previous('status'))
+            transaction_status_changed.send(
+                sender=self.__class__,
+                instance=self,
+                old_status=self.status_tracker.previous('status')
+            )
         if self.status == self.FAILURE:
             transaction_failure_send.send(sender=self.__class__, instance=self)

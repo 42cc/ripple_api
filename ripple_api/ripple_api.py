@@ -15,6 +15,49 @@ logger = logging.getLogger(__name__)
 
 ENGINE_SUCCESS = 'tesSUCCESS'
 
+'''
+   Trust lines flags definition
+   Docs: https://ripple.com/build/transactions/#trustset
+'''
+# Authorize the other party to hold issuances from this
+# account. (No effect unless using the asfRequireAuth
+# AccountSet flag.) Cannot be unset.
+#
+# For details see:
+# https://ripple.com/build/transactions/#accountset-flags
+SET_AUTH = 0x00010000        # tfSetAuth = 65536
+
+# Blocks rippling between two trustlines of the same currency,
+# if this flag is set on both. (See No Ripple for details.)
+#
+# For details see:
+# https://ripple.com/knowledge_center/understanding-the-noripple-flag/
+SET_NORIPPLE = 0x00020000    # tfSetNoRipple = 131072
+
+# Clears the No-Rippling flag. (See No Ripple for details.)
+#
+# For details see:
+# https://ripple.com/knowledge_center/understanding-the-noripple-flag/
+CLEAR_NORIPPLE = 0x00040000   # tfClearNoRipple = 262144
+
+# Freeze the trustline.
+#
+# For details see:
+# https://wiki.ripple.com/Freeze
+SET_FREEZE = 0x00100000      # tfSetFreeze = 1048576
+
+# Unfreeze the trustline
+#
+# For details see:
+# https://wiki.ripple.com/Freeze
+CLEAR_FREEZE = 0x00200000    # tfClearFreeze = 2097152
+
+# No flags set
+NO_FLAGS = 0x0000000
+'''
+    end of Trust lines flags definition
+'''
+
 
 class RippleApiError(Exception):
 
@@ -46,7 +89,13 @@ def call_api(data, servers=None, server_url=None, api_user=None,
                 }
             ]
         else:
-            servers = settings.RIPPLE_API_DATA
+            from django.core.exceptions import ImproperlyConfigured
+            # we have django in virtual env, but not necessarily
+            # a settings.RIPPLE_API_DATA
+            try:
+                servers = settings.RIPPLE_API_DATA
+            except ImproperlyConfigured:
+                raise ImportError
     except ImportError:
         if servers is None:
             if server_url:
@@ -102,6 +151,25 @@ def call_api(data, servers=None, server_url=None, api_user=None,
         raise RippleApiError('Timeout', '', 'rippled timed out')
 
     raise error
+
+
+def account_info(account, servers=None, server_url=None, api_user=None,
+                 api_password=None, timeout=5):
+
+    request = {
+        "method": "account_info",
+        "params": [
+            {
+                "account": account,
+                "strict": True,
+                "ledger_index": "validated"
+            }
+        ]
+    }
+
+    return call_api(request, servers=servers, server_url=server_url,
+                    api_user=api_user, api_password=api_password,
+                    timeout=timeout)
 
 
 def account_tx(
@@ -165,7 +233,7 @@ def tx(transaction_id, servers=None, server_url=None, api_user=None,
                     timeout=timeout)
 
 
-def path_find(account, destination, amount, source_currencies, servers=None,
+def path_find(account, destination, amount, source_currencies=None, servers=None,
               server_url=None, api_user=None, api_password=None, timeout=5):
     '''
     Before sending IOU you need to find paths to the destination account
@@ -189,9 +257,10 @@ def path_find(account, destination, amount, source_currencies, servers=None,
                 'source_account': account,
                 'destination_account': destination,
                 'destination_amount': amount,
-                'source_currencies': source_currencies,
                 }]
         }
+    if source_currencies:
+       data['params'][0]['source_currencies'] = source_currencies
     return call_api(data, servers=servers, server_url=server_url,
                     api_user=api_user, api_password=api_password,
                     timeout=timeout)
@@ -288,6 +357,13 @@ def submit(tx_blob, fail_hard=False, servers=None, server_url=None,
 
 def balance(account, issuers, currency, servers=None, server_url=None,
             api_user=None, api_password=None, timeout=5):
+
+    if currency == "XRP":
+        info = account_info(account, servers=servers, server_url=server_url,
+                            api_user=api_user, api_password=api_password,
+                            timeout=timeout)
+        return Decimal(info["account_data"]["Balance"]) / Decimal(1e6)
+
     results = call_api({'method': 'account_lines',
                         'params': [{'account': account}]
                         },
@@ -305,7 +381,9 @@ def balance(account, issuers, currency, servers=None, server_url=None,
     return total
 
 
-def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
+def is_trust_set(trusts, peer, currency='', limit=0,
+                 servers=None, server_url=None, api_user=None,
+                 api_password=None, timeout=5):
     """
     checks if 'trusts' trusts 'peer' with specified currency and limit
 
@@ -316,7 +394,7 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
         `peer`:
             ripple_address, that is trusted by  by 'trusts'
         `currency` (optional):
-            currency in which trust should be set
+            currency in which trust should be verified
         `limit` (optional):
             minimal amount of trust
 
@@ -333,6 +411,8 @@ def is_trust_set(trusts, peer, currency='', limit=0, timeout=5):
                 'peer': peer
             }]
         },
+        servers=servers, server_url=server_url,
+        api_user=api_user, api_password=api_password,
         timeout=timeout,
     )
 
@@ -409,13 +489,13 @@ def create_offer(taker_pays, taker_gets,
     taker - user, that accepts your offer
     takes:
         taker_pays -  {
-            'amount':   - float - amount to buy
+            'value':   - float - amount to buy
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
         or Decimal(amount) if currency is XRP
         taker_gets -  {
-            'amount':   - float - amount to sell
+            'value':   - float - amount to sell
             'currency': - str   - currency
             'issuer':   - str   - issuer
         }
@@ -423,11 +503,11 @@ def create_offer(taker_pays, taker_gets,
     """
 
     if isinstance(taker_pays, dict):
-        taker_pays['amount'] = "%.12f" % taker_pays['amount']
+        taker_pays['value'] = "%.12f" % taker_pays['value']
     else:
         taker_pays = "%.12f" % taker_pays
     if isinstance(taker_gets, dict):
-        taker_gets['amount'] = "%.12f" % taker_gets['amount']
+        taker_gets['value'] = "%.12f" % taker_gets['value']
     else:
         taker_gets = "%.12f" % taker_gets
     offer = {
@@ -533,11 +613,10 @@ def extract_value(taker_pays_or_gets):
 
 
 def _error(resp):
-    return {'status': resp['status'],
-            'status_msg': resp['error_message']
-            }
+    return {'status': resp.get('status'),
+            'status_msg': resp.get('error_message')}
 
-def buy_xrp(amount, account, secret):
+def buy_xrp(amount, account, secret, servers=None):
     """Trade USD -> XRP.
 
     - amount: amount of XRP to buy in drops (1000000 = 1 XRP)
@@ -545,7 +624,8 @@ def buy_xrp(amount, account, secret):
     - secret: account's secret
     """
     logger.info("Trying to find paths")
-    paths = path_find(account, account, "%s" % amount, [{"currency": "USD"}])
+    paths = path_find(account, account, "%s" % amount, [{"currency": "USD"}],
+                      servers=servers)
     if paths['status'] != 'success':
         logger.error('Failed to find paths')
         return _error(paths)
@@ -554,7 +634,7 @@ def buy_xrp(amount, account, secret):
     logger.info("Trying to sign transaction")
 
     if len(paths['alternatives']) == 0:
-        msg = u'No path alternatives (probably no USD)'
+        msg = u'No path alternatives (probably no USD or not enough offers)'
         paths['status'] = 'error'
         paths['error_message'] = msg
         logger.error(msg)
@@ -563,7 +643,7 @@ def buy_xrp(amount, account, secret):
     result = sign(account, secret, account, amount,
                   send_max=send_max,
                   paths=paths['alternatives'][0]['paths_computed'],
-                  flags=0)
+                  flags=0, servers=servers)
     if result['status'] != 'success':
         logger.error('Failed to sign the transaction')
         return _error(result)
@@ -572,7 +652,7 @@ def buy_xrp(amount, account, secret):
     logger.info("Trying to submit transaction")
 
     blob = result['tx_blob']
-    result = submit(blob)
+    result = submit(blob, servers=servers)
     if result['status'] != 'success':
         return {'status': result['status'],
                 'status_msg': result['error']}
@@ -582,3 +662,172 @@ def buy_xrp(amount, account, secret):
     return {'status': 'success',
             'bought': amount,
             'sold': send_max['value']}
+
+
+def trust_set(account, secret, destination, amount, currency,
+              flags=NO_FLAGS, destination_tag=None,
+              servers=None, server_url=None, api_user=None, api_password=None,
+              timeout=5, fee=10000):
+    """
+        Creates, updates or deletes trust line from account to destination
+        with amount of currency
+
+        Documentation:
+        https://ripple.com/build/transactions/#trustset
+
+        takes:
+
+            account -- id of the ripple account trusts
+
+            secret -- the secret of account trusts
+
+            destination -- id of the ripple account must be trust to
+
+            amount -- amount of trust limit. if Amount is 0 trust line will
+                      be deleted from account to destination
+
+            currency -- currency of trust line
+
+            fee -- (optional) XRP drops of ripple fee. Default = 10000 drops
+
+            flags -- (optional) integer or dictionary - {
+                "Auth":
+                    True, # tfSetAuth - equals to increase flags by SET_AUTH
+                "AllowRipple":
+                    False, # tfSetNoRipple - equals to increase flags
+                           # by SET_NORIPPLE
+                    True, # tfClearNoRipple - equals to increase
+                          # flags by CLEAR_NORIPPLE
+                "Freeze":
+                    True, # tfSetFreeze - equals to increase flags
+                          # by SET_FREEZE
+                    False, # tfClearFreeze - equals to increase flags
+                           # by CLEAR_FREEZE
+            }. Default equals to { } (empty dictionary)
+
+            destination_tag -- (optional) the tag to explain the transaction
+
+            servers -- (optional) the list of servers to be called to submit
+                       transaction
+
+        returns: result field form json-response of rippled server
+
+    """
+    if isinstance(flags, dict):
+        flags = (
+            # tfSetAuth
+            (SET_AUTH if flags.get("Auth", False) else 0) +
+
+            # tfClearNoRipple
+            (CLEAR_NORIPPLE if flags.get("AllowRipple", None) else 0) +
+
+            # tfSetNoRipple
+            (SET_NORIPPLE if not flags.get("AllowRipple", True) else 0) +
+
+            # tfSetFreeze
+            (SET_FREEZE if flags.get("Freeze", None) else 0) +
+
+            # tfClearFreeze
+            (CLEAR_FREEZE if not flags.get("Freeze", True) else 0)
+        )
+
+    trustset = {
+        "method": "submit",
+        "params": [{
+            "secret": secret,
+            "tx_json": {
+                "TransactionType": "TrustSet",
+                "Fee": str(fee),
+                "Flags": flags,
+                "Account": account,
+                "LimitAmount": {
+                    "currency": currency,
+                    "issuer": destination,
+                    "value": "%.2f" % amount
+                }
+            },
+        }]
+    }
+
+    logger.info("Trying to submit TrustSet")
+
+    result = call_api(trustset,
+                      servers=servers, server_url=server_url,
+                      api_user=api_user, api_password=api_password,
+                      timeout=timeout
+                      )
+
+    if result['status'] == 'success':
+        logger.info("TrustSet was successfully submitted")
+
+    return result
+
+
+def simple_trade(account, secret, currency_from, currency_to, amount):
+    """
+    Exchange currencies. Uses method similar to what ripple client does in
+    'Trade -> Simple' mode.
+
+    :param account: account for which exchange happens
+    :param secret: account's secret
+    :param currency_from: currency to sell
+    :param currency_to: currency to buy
+    :param amount: amount to sell. Exchange rate determined automatically
+
+    Both currency params are dicts with currency & issuer key.
+    """
+    amount = "%.12f" % amount
+    rate = convert(
+        amount,
+        currency_from['currency'],
+        currency_from['issuer'],
+        currency_to['currency'],
+        currency_to['issuer'],
+        sell=True,
+    )
+    if rate['status'] != 'success':
+        logger.error('Failed to determine exchange rate')
+        return _error(rate)
+
+    value = "%.12f" % rate['amount_to']
+    to_buy = dict(value=value, **currency_to)
+    paths = path_find(
+        account,
+        account,
+        to_buy,
+        [currency_from],
+    )
+    if paths['status'] != 'success':
+        logger.error('Failed to find paths')
+        return _error(paths)
+    if len(paths['alternatives']) == 0:
+        msg = u'No path alternatives (probably no USD or no offers)'
+        paths['status'] = 'error'
+        paths['error_message'] = msg
+        logger.error(msg)
+        return _error(paths)
+
+    send_max = paths['alternatives'][0]['source_amount']
+    result = sign(
+        account,
+        secret,
+        account,
+        to_buy,
+        send_max=send_max,
+        paths=paths['alternatives'][0]['paths_computed'],
+    )
+    if result['status'] != 'success':
+        logger.error('Failed to sign the transaction')
+        return _error(result)
+
+    blob = result['tx_blob']
+    result = submit(blob, fail_hard=True)
+    ok = (result['status'] == 'success'
+          and result.get('engine_result') == ENGINE_SUCCESS)
+    if ok:
+        return {'status': 'success',
+                'bought': to_buy,
+                'sold': send_max}
+    status = (result['status'], result.get('engine_result'))
+    return {'status': '%s: %s' % status,
+            'status_msg': result.get('error')}
