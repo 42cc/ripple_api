@@ -12,11 +12,11 @@ from ripple_api import RippleApiError, path_find, sign, submit, tx
 def sign_task(transaction_pk, secret):
     logger = logging.getLogger('ripple')
 
-    transaction = Transaction.objects.filter(pk=transaction_pk).first()
-    if not transaction:
+    transaction = Transaction.objects.filter(pk=transaction_pk)
+    if not transaction.exists():
         logger.error("sign_task: transaction %s not found in DB!" % transaction_pk)
         return
-
+    transaction = transaction[0]
     try:
         if transaction.currency == 'XRP':
             amount = transaction.value
@@ -62,11 +62,12 @@ def sign_task(transaction_pk, secret):
 def submit_task(transaction_pk):
     if not transaction_pk:
         return
-    transaction = Transaction.objects.filter(pk=transaction_pk).first()
+    transaction = Transaction.objects.filter(pk=transaction_pk)
     logger = logging.getLogger('ripple')
-    if not transaction:
+    if not transaction.exists():
         logger.error("sign_task: transaction %s not found in DB!" % transaction_pk)
         return
+    transaction = transaction[0]
     try:
         response = submit(transaction.tx_blob)
         if response['engine_result'] == "telINSUF_FEE_P":
