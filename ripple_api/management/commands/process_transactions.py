@@ -2,7 +2,7 @@
 import logging
 
 from django.conf import settings
-from django.core.management.base import NoArgsCommand
+from django.core.management import BaseCommand
 
 from ripple_api.ripple_api import tx, RippleApiError
 from ripple_api.models import Transaction
@@ -19,7 +19,7 @@ logger = logging.getLogger('ripple')
 logger.setLevel(logging.ERROR)
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Command that processes transactions.'
 
     def handle_noargs(self, **options):
