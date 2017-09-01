@@ -22,7 +22,7 @@ logger.setLevel(logging.ERROR)
 class Command(BaseCommand):
     help = 'Command that processes transactions.'
 
-    def handle_noargs(self, **options):
+    def handle(self, **options):
         self.retry_failed_transactions()
         monitor_transactions(account=settings.RIPPLE_ACCOUNT)
         self.return_funds()
