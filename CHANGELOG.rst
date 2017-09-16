@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.0.48
+====
+
+- Update the project to be compatible with Django 1.11
+
 0.0.47
 ====
 
