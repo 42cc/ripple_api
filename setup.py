@@ -9,7 +9,7 @@ setup(
     version='0.0.48',
     packages=find_packages(),
     requires=['python (>= 2.7)', 'requests', 'django_model_utils'],
-    install_requires=['requests>=2.6.0', 'django-model-utils'],
+    install_requires=['requests>=2.6.0', 'django-model-utils', 'South==1.0.2'],
     tests_require=['mock'],
     description='Python wrapper for the Ripple API',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
