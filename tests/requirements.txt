@@ -3,5 +3,5 @@
 # install ripple_api as a symlink to sources
 -e ../.
 
-celery==3.1.17
+celery==5.2.2
 mock==1.0.1
